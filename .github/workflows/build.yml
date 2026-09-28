@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <title>AvaFix Flight Logbook</title>
 
@@ -23,35 +23,27 @@
       --text-muted: #94a3b8;
 
       --input-bg: #0d1527;
-
-      --font-family:
-        -apple-system,
-        BlinkMacSystemFont,
-        "Segoe UI",
-        Roboto,
-        "Vazirmatn",
-        Tahoma,
-        sans-serif;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       background: var(--bg-dark);
       color: var(--text-main);
-      font-family: var(--font-family);
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Tahoma,
+        sans-serif;
+
       min-height: 100vh;
       padding-bottom: 40px;
     }
-
-    /* =========================
-       HEADER
-    ========================== */
 
     header {
       background:
@@ -62,16 +54,13 @@
         );
 
       padding: 18px 20px;
-
-      border-bottom:
-        1px solid var(--card-border);
-
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      border-bottom: 1px solid var(--card-border);
     }
 
     .brand {
+      max-width: 620px;
+      margin: auto;
+
       display: flex;
       align-items: center;
       gap: 10px;
@@ -84,18 +73,13 @@
     .brand-title {
       font-size: 1.25rem;
       font-weight: 800;
-      color: white;
     }
 
     .brand-subtitle {
-      font-size: 0.75rem;
       color: var(--primary);
+      font-size: 0.75rem;
       margin-top: 2px;
     }
-
-    /* =========================
-       MAIN
-    ========================== */
 
     main {
       width: 100%;
@@ -110,34 +94,22 @@
 
     .card {
       background: var(--card-bg);
-
-      border:
-        1px solid var(--card-border);
-
+      border: 1px solid var(--card-border);
       border-radius: 14px;
-
       padding: 16px;
 
       box-shadow:
-        0 4px 20px rgba(0,0,0,0.3);
+        0 4px 20px rgba(0, 0, 0, 0.3);
     }
 
     .card-title {
+      color: var(--primary);
       font-size: 1rem;
       font-weight: 700;
-
-      color: var(--primary);
-
       margin-bottom: 14px;
-
-      display: flex;
-      align-items: center;
-      gap: 7px;
     }
 
-    /* =========================
-       DASHBOARD
-    ========================== */
+    /* Dashboard */
 
     .dashboard {
       display: grid;
@@ -147,36 +119,29 @@
 
     .stat {
       background: #090e1a;
-
-      border:
-        1px solid #1a2542;
-
+      border: 1px solid #1a2542;
       border-radius: 10px;
-
       padding: 13px;
-
       text-align: center;
     }
 
     .stat-label {
-      font-size: 0.75rem;
       color: var(--text-muted);
+      font-size: 0.75rem;
       margin-bottom: 6px;
     }
 
     .stat-value {
+      color: var(--accent);
       font-size: 1.25rem;
       font-weight: 800;
-      color: var(--accent);
     }
 
     .stat-primary {
       color: var(--primary);
     }
 
-    /* =========================
-       FORM
-    ========================== */
+    /* Form */
 
     .form-group {
       display: flex;
@@ -185,53 +150,39 @@
       margin-bottom: 12px;
     }
 
-    .form-group label {
-      font-size: 0.83rem;
+    label {
       color: var(--text-muted);
+      font-size: 0.83rem;
     }
 
     input {
+      width: 100%;
+
       background: var(--input-bg);
-
-      border:
-        1px solid #2d3f6d;
-
-      border-radius: 8px;
-
       color: white;
+
+      border: 1px solid #2d3f6d;
+      border-radius: 8px;
 
       padding: 11px 12px;
 
       font-family: inherit;
-
       font-size: 0.95rem;
 
-      width: 100%;
-
       outline: none;
-
-      transition:
-        border-color 0.2s,
-        box-shadow 0.2s;
     }
 
     input:focus {
       border-color: var(--primary);
 
       box-shadow:
-        0 0 0 2px rgba(56,189,248,0.08);
+        0 0 0 2px rgba(56, 189, 248, 0.08);
     }
 
     .route-row {
       display: grid;
-
-      grid-template-columns:
-        1fr
-        auto
-        1fr;
-
+      grid-template-columns: 1fr auto 1fr;
       gap: 8px;
-
       align-items: end;
     }
 
@@ -239,25 +190,18 @@
       height: 44px;
 
       display: flex;
-
       align-items: center;
-
       justify-content: center;
 
       color: var(--primary);
-
       font-size: 1.3rem;
     }
 
-    /* =========================
-       BUTTONS
-    ========================== */
+    /* Buttons */
 
     .btn {
       display: inline-flex;
-
       align-items: center;
-
       justify-content: center;
 
       gap: 6px;
@@ -265,18 +209,13 @@
       padding: 11px 14px;
 
       border-radius: 8px;
-
       border: none;
 
       font-family: inherit;
-
       font-size: 0.9rem;
-
       font-weight: 700;
 
       cursor: pointer;
-
-      transition: 0.2s;
     }
 
     .btn-primary {
@@ -284,26 +223,23 @@
       color: #001018;
     }
 
-    .btn-primary:active {
+    .btn-primary:hover {
       background: var(--primary-hover);
+      color: white;
     }
 
     .btn-secondary {
       background: #1e293b;
       color: #cbd5e1;
 
-      border:
-        1px solid #334155;
+      border: 1px solid #334155;
     }
 
     .btn-danger {
-      background:
-        rgba(239,68,68,0.12);
-
+      background: rgba(239, 68, 68, 0.12);
       color: #f87171;
 
-      border:
-        1px solid rgba(239,68,68,0.3);
+      border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
     .btn-small {
@@ -311,151 +247,49 @@
       font-size: 0.75rem;
     }
 
-    /* =========================
-       ADD FLIGHT
-    ========================== */
+    /* Preview */
 
     .flight-preview {
+      display: none;
+
       margin-top: 10px;
 
       background: #090e1a;
-
-      border:
-        1px solid #1a2542;
-
+      border: 1px solid #1a2542;
       border-radius: 9px;
 
       padding: 12px;
-
-      display: none;
 
       text-align: center;
     }
 
     .flight-route {
+      color: white;
       font-size: 1.2rem;
       font-weight: 800;
 
-      color: white;
+      direction: ltr;
     }
 
     .flight-duration {
       color: var(--accent);
-
       font-size: 1rem;
-
       font-weight: 700;
 
       margin-top: 4px;
     }
 
-    /* =========================
-       FILTER
-    ========================== */
+    /* Filter */
 
     .filter-row {
       display: grid;
-
-      grid-template-columns:
-        1fr
-        1fr;
-
+      grid-template-columns: 1fr auto;
       gap: 8px;
 
       margin-bottom: 12px;
     }
 
-    /* =========================
-       HISTORY
-    ========================== */
-
-    .flight-record {
-      background: #0d1527;
-
-      border:
-        1px solid #1f2d50;
-
-      border-radius: 10px;
-
-      padding: 12px;
-
-      margin-bottom: 8px;
-    }
-
-    .record-top {
-      display: flex;
-
-      justify-content: space-between;
-
-      align-items: center;
-
-      gap: 10px;
-    }
-
-    .record-date {
-      font-size: 0.78rem;
-      color: var(--text-muted);
-    }
-
-    .record-duration {
-      color: var(--accent);
-
-      font-size: 1rem;
-
-      font-weight: 800;
-    }
-
-    .record-route {
-      font-size: 1rem;
-
-      font-weight: 800;
-
-      margin-top: 7px;
-
-      direction: ltr;
-
-      text-align: center;
-    }
-
-    .record-gregorian {
-      font-size: 0.7rem;
-
-      color: #64748b;
-
-      text-align: center;
-
-      margin-top: 4px;
-
-      direction: ltr;
-    }
-
-    .record-actions {
-      display: flex;
-
-      justify-content: flex-end;
-
-      gap: 5px;
-
-      margin-top: 9px;
-    }
-
-    /* =========================
-       EMPTY
-    ========================== */
-
-    .empty {
-      text-align: center;
-
-      color: var(--text-muted);
-
-      font-size: 0.85rem;
-
-      padding: 22px 10px;
-    }
-
-    /* =========================
-       TOTAL
-    ========================== */
+    /* Total */
 
     .total-box {
       background:
@@ -465,91 +299,140 @@
           #090e1a
         );
 
-      border:
-        1px solid #244568;
-
+      border: 1px solid #244568;
       border-radius: 12px;
 
       padding: 15px;
 
       text-align: center;
-
       margin-bottom: 12px;
     }
 
     .total-label {
       color: var(--text-muted);
-
       font-size: 0.8rem;
     }
 
     .total-value {
       color: var(--primary);
-
       font-size: 1.7rem;
-
       font-weight: 900;
 
       margin-top: 4px;
     }
 
-    /* =========================
-       MODAL
-    ========================== */
+    /* History */
+
+    .flight-record {
+      background: #0d1527;
+
+      border: 1px solid #1f2d50;
+      border-radius: 10px;
+
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+
+    .record-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      gap: 10px;
+    }
+
+    .record-date {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+    }
+
+    .record-duration {
+      color: var(--accent);
+      font-size: 1rem;
+      font-weight: 800;
+    }
+
+    .record-route {
+      color: white;
+
+      font-size: 1rem;
+      font-weight: 800;
+
+      margin-top: 7px;
+
+      direction: ltr;
+      text-align: center;
+    }
+
+    .record-actions {
+      display: flex;
+      justify-content: flex-end;
+
+      gap: 5px;
+      margin-top: 9px;
+    }
+
+    .empty {
+      color: var(--text-muted);
+      text-align: center;
+
+      font-size: 0.85rem;
+      padding: 22px 10px;
+    }
+
+    /* Modal */
 
     .modal-overlay {
       display: none;
 
       position: fixed;
-
       inset: 0;
 
-      background:
-        rgba(0,0,0,0.72);
-
-      backdrop-filter: blur(4px);
+      background: rgba(0, 0, 0, 0.72);
 
       z-index: 1000;
 
       align-items: center;
-
       justify-content: center;
 
       padding: 15px;
     }
 
     .modal-box {
+      width: 100%;
+      max-width: 430px;
+
       background: var(--card-bg);
 
-      border:
-        1px solid var(--card-border);
-
+      border: 1px solid var(--card-border);
       border-radius: 14px;
-
-      width: 100%;
-
-      max-width: 430px;
 
       padding: 18px;
 
       box-shadow:
-        0 15px 40px rgba(0,0,0,0.6);
+        0 15px 40px rgba(0, 0, 0, 0.6);
     }
 
     .modal-title {
-      font-size: 1rem;
-
       color: var(--primary);
+
+      font-size: 1rem;
+      font-weight: 700;
 
       margin-bottom: 14px;
     }
 
-    /* =========================
-       RESPONSIVE
-    ========================== */
+    .modal-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .modal-buttons .btn {
+      flex: 1;
+    }
 
     @media (max-width: 430px) {
-
       .route-row {
         grid-template-columns: 1fr;
       }
@@ -559,8 +442,8 @@
         transform: rotate(90deg);
       }
 
-      .dashboard {
-        grid-template-columns: 1fr 1fr;
+      .filter-row {
+        grid-template-columns: 1fr;
       }
     }
   </style>
@@ -569,13 +452,11 @@
 <body>
 
 <header>
-
   <div class="brand">
 
-    <span class="brand-icon">✈️</span>
+    <div class="brand-icon">✈️</div>
 
     <div>
-
       <div class="brand-title">
         AvaFix Logbook
       </div>
@@ -583,21 +464,17 @@
       <div class="brand-subtitle">
         Flight Logbook
       </div>
-
     </div>
 
   </div>
-
 </header>
 
 
 <main>
 
-  <!-- =========================
-       DASHBOARD
-  ========================== -->
+  <!-- DASHBOARD -->
 
-  <div class="card">
+  <section class="card">
 
     <div class="card-title">
       📊 خلاصه پرواز
@@ -606,7 +483,6 @@
     <div class="dashboard">
 
       <div class="stat">
-
         <div class="stat-label">
           تعداد کل پرواز
         </div>
@@ -616,12 +492,10 @@
           class="stat-value stat-primary">
           ۰
         </div>
-
       </div>
 
 
       <div class="stat">
-
         <div class="stat-label">
           مجموع کل پرواز
         </div>
@@ -631,12 +505,10 @@
           class="stat-value">
           ۰۰:۰۰
         </div>
-
       </div>
 
 
       <div class="stat">
-
         <div class="stat-label">
           پروازهای امسال
         </div>
@@ -646,12 +518,10 @@
           class="stat-value stat-primary">
           ۰
         </div>
-
       </div>
 
 
       <div class="stat">
-
         <div class="stat-label">
           ساعت امسال
         </div>
@@ -661,19 +531,15 @@
           class="stat-value">
           ۰۰:۰۰
         </div>
-
       </div>
 
     </div>
+  </section>
 
-  </div>
 
+  <!-- ADD FLIGHT -->
 
-  <!-- =========================
-       ADD FLIGHT
-  ========================== -->
-
-  <div class="card">
+  <section class="card">
 
     <div class="card-title">
       📝 ثبت پرواز جدید
@@ -682,14 +548,15 @@
 
     <div class="form-group">
 
-      <label>
+      <label for="flightDate">
         تاریخ پرواز
       </label>
 
       <input
         id="flightDate"
         type="text"
-        placeholder="مثال: ۱۴۰۵/۰۷/۰۷">
+        inputmode="numeric"
+        placeholder="۱۴۰۵/۰۷/۰۷">
 
     </div>
 
@@ -698,7 +565,7 @@
 
       <div class="form-group">
 
-        <label>
+        <label for="origin">
           🛫 مبدأ
         </label>
 
@@ -719,7 +586,7 @@
 
       <div class="form-group">
 
-        <label>
+        <label for="destination">
           🛬 مقصد
         </label>
 
@@ -737,7 +604,7 @@
 
     <div class="form-group">
 
-      <label>
+      <label for="duration">
         ⏱️ مدت پرواز
       </label>
 
@@ -776,14 +643,12 @@
 
     </button>
 
-  </div>
+  </section>
 
 
-  <!-- =========================
-       HISTORY
-  ========================== -->
+  <!-- HISTORY -->
 
-  <div class="card">
+  <section class="card">
 
     <div class="card-title">
       📚 آرشیو پروازها
@@ -794,8 +659,9 @@
 
       <input
         id="filterMonth"
-        type="month"
-        title="فیلتر ماه">
+        type="text"
+        inputmode="numeric"
+        placeholder="فیلتر ماه: ۱۴۰۵/۰۷">
 
       <button
         id="btnClearFilter"
@@ -817,9 +683,7 @@
       <div
         id="filteredTotal"
         class="total-value">
-
         ۰۰:۰۰
-
       </div>
 
     </div>
@@ -827,14 +691,12 @@
 
     <div id="historyList"></div>
 
-  </div>
+  </section>
 
 </main>
 
 
-<!-- =========================
-     EDIT MODAL
-========================== -->
+<!-- EDIT MODAL -->
 
 <div
   id="editModal"
@@ -854,13 +716,14 @@
 
     <div class="form-group">
 
-      <label>
+      <label for="editDate">
         تاریخ
       </label>
 
       <input
         id="editDate"
-        type="text">
+        type="text"
+        inputmode="numeric">
 
     </div>
 
@@ -869,12 +732,13 @@
 
       <div class="form-group">
 
-        <label>
+        <label for="editOrigin">
           مبدأ
         </label>
 
         <input
           id="editOrigin"
+          type="text"
           maxlength="4">
 
       </div>
@@ -887,12 +751,13 @@
 
       <div class="form-group">
 
-        <label>
+        <label for="editDestination">
           مقصد
         </label>
 
         <input
           id="editDestination"
+          type="text"
           maxlength="4">
 
       </div>
@@ -902,36 +767,32 @@
 
     <div class="form-group">
 
-      <label>
+      <label for="editDuration">
         مدت پرواز
       </label>
 
       <input
         id="editDuration"
+        type="text"
         inputmode="numeric">
 
     </div>
 
 
-    <div style="
-      display:flex;
-      gap:8px;
-      margin-top:10px;
-    ">
+    <div class="modal-buttons">
 
       <button
         id="btnCancelEdit"
-        class="btn btn-secondary"
-        style="flex:1;">
+        class="btn btn-secondary">
 
         انصراف
 
       </button>
 
+
       <button
         id="btnUpdateFlight"
-        class="btn btn-primary"
-        style="flex:1;">
+        class="btn btn-primary">
 
         ذخیره تغییرات
 
@@ -953,7 +814,7 @@
    */
 
   const STORAGE_KEY =
-    "avafix_flight_logbook_v2";
+    "avafix_flight_logbook_v3";
 
 
   let flights = [];
@@ -961,45 +822,38 @@
 
   /*
    * ==========================================
-   * UTILITIES
+   * DIGITS
    * ==========================================
    */
 
   function toEnglishDigits(value) {
 
-    if (!value) return "";
+    if (value === null || value === undefined) {
+      return "";
+    }
 
-    return value
-      .toString()
-      .replace(/[۰-۹]/g, d =>
-        "۰۱۲۳۴۵۶۷۸۹".indexOf(d)
-      )
-      .replace(/[٠-٩]/g, d =>
-        "٠١٢٣٤٥٦٧٨٩".indexOf(d)
-      );
-
+    return String(value)
+      .replace(/[۰-۹]/g, function(digit) {
+        return "۰۱۲۳۴۵۶۷۸۹".indexOf(digit);
+      })
+      .replace(/[٠-٩]/g, function(digit) {
+        return "٠١٢٣٤٥٦٧٨٩".indexOf(digit);
+      });
   }
 
 
   function toPersianDigits(value) {
 
-    return value
-      .toString()
-      .replace(/\d/g, d =>
-        "۰۱۲۳۴۵۶۷۸۹"[d]
-      );
-
+    return String(value)
+      .replace(/\d/g, function(digit) {
+        return "۰۱۲۳۴۵۶۷۸۹"[digit];
+      });
   }
 
 
   /*
    * ==========================================
    * DATE
-   * ==========================================
-   *
-   * fa-IR normally gives Solar Hijri display.
-   * We also store an ISO/Gregorian date internally.
-   *
    * ==========================================
    */
 
@@ -1017,24 +871,58 @@
   }
 
 
-  function getTodayGregorianISO() {
-
-    const d = new Date();
-
-    return [
-      d.getFullYear(),
-      String(d.getMonth() + 1).padStart(2, "0"),
-      String(d.getDate()).padStart(2, "0")
-    ].join("-");
-
-  }
-
-
   function normalizePersianDate(value) {
 
     return toEnglishDigits(value)
       .replace(/-/g, "/")
-      .replace(/\s/g, "");
+      .replace(/\s/g, "")
+      .trim();
+
+  }
+
+
+  function isValidPersianDate(value) {
+
+    const date =
+      normalizePersianDate(value);
+
+    const match =
+      /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(date);
+
+    if (!match) {
+      return false;
+    }
+
+    const year =
+      Number(match[1]);
+
+    const month =
+      Number(match[2]);
+
+    const day =
+      Number(match[3]);
+
+    if (year < 1300 || year > 1500) {
+      return false;
+    }
+
+    if (month < 1 || month > 12) {
+      return false;
+    }
+
+    if (day < 1 || day > 31) {
+      return false;
+    }
+
+    if (month >= 7 && month <= 11 && day > 30) {
+      return false;
+    }
+
+    if (month === 12 && day > 30) {
+      return false;
+    }
+
+    return true;
 
   }
 
@@ -1047,17 +935,24 @@
 
   function parseDuration(value) {
 
-    if (!value) return 0;
+    if (!value) {
+      return 0;
+    }
 
-    value = toEnglishDigits(value)
-      .trim()
-      .replace("٫", ":")
-      .replace(".", ":");
+    let text =
+      toEnglishDigits(value)
+        .trim()
+        .replace(/[٫.]/g, ":");
 
 
-    if (value.includes(":")) {
+    if (text.includes(":")) {
 
-      const parts = value.split(":");
+      const parts =
+        text.split(":");
+
+      if (parts.length !== 2) {
+        return 0;
+      }
 
       const hours =
         parseInt(parts[0], 10);
@@ -1065,54 +960,53 @@
       const minutes =
         parseInt(parts[1], 10);
 
-
       if (
         Number.isNaN(hours) ||
         Number.isNaN(minutes) ||
+        hours < 0 ||
+        minutes < 0 ||
         minutes > 59
       ) {
         return 0;
       }
 
       return hours * 60 + minutes;
-
     }
 
 
-    /*
-     * اگر فقط عدد وارد شود،
-     * آن را دقیقه در نظر می‌گیریم.
-     */
-
     const minutes =
-      parseInt(value, 10);
+      parseInt(text, 10);
 
-    return Number.isNaN(minutes)
-      ? 0
-      : minutes;
+    if (
+      Number.isNaN(minutes) ||
+      minutes <= 0
+    ) {
+      return 0;
+    }
+
+    return minutes;
 
   }
 
 
   function formatDuration(minutes) {
 
-    minutes =
+    const total =
       Math.max(
         0,
         Number(minutes) || 0
       );
 
     const hours =
-      Math.floor(minutes / 60);
+      Math.floor(total / 60);
 
     const mins =
-      minutes % 60;
-
+      total % 60;
 
     return (
-      String(hours).padStart(2, "0")
-      + ":"
-      + String(mins).padStart(2, "0")
+      String(hours).padStart(2, "0") +
+      ":" +
+      String(mins).padStart(2, "0")
     );
 
   }
@@ -1136,11 +1030,11 @@
   function createId() {
 
     return (
-      Date.now().toString(36)
-      +
+      Date.now().toString(36) +
+      "-" +
       Math.random()
         .toString(36)
-        .substring(2, 8)
+        .substring(2, 9)
     );
 
   }
@@ -1167,30 +1061,27 @@
     const saved =
       localStorage.getItem(STORAGE_KEY);
 
-
     if (!saved) {
-
       flights = [];
-
       return;
-
     }
-
 
     try {
 
-      flights =
+      const parsed =
         JSON.parse(saved);
 
-      if (!Array.isArray(flights)) {
-
-        flights = [];
-
-      }
+      flights =
+        Array.isArray(parsed)
+          ? parsed
+          : [];
 
     } catch (error) {
 
-      console.error(error);
+      console.error(
+        "خطا در خواندن اطلاعات:",
+        error
+      );
 
       flights = [];
 
@@ -1207,11 +1098,12 @@
 
   function getCurrentPersianYear() {
 
-    const date =
-      getTodayPersian();
+    const today =
+      normalizePersianDate(
+        getTodayPersian()
+      );
 
-    return normalizePersianDate(date)
-      .split("/")[0];
+    return today.split("/")[0];
 
   }
 
@@ -1227,9 +1119,7 @@
     const dateInput =
       document
         .getElementById("flightDate")
-        .value
-        .trim();
-
+        .value;
 
     const origin =
       document
@@ -1238,7 +1128,6 @@
         .trim()
         .toUpperCase();
 
-
     const destination =
       document
         .getElementById("destination")
@@ -1246,51 +1135,52 @@
         .trim()
         .toUpperCase();
 
-
     const durationInput =
       document
         .getElementById("duration")
-        .value
-        .trim();
-
+        .value;
 
     const date =
       normalizePersianDate(
-        dateInput || getTodayPersian()
+        dateInput
+      );
+
+    const minutes =
+      parseDuration(
+        durationInput
       );
 
 
-    const minutes =
-      parseDuration(durationInput);
+    if (!isValidPersianDate(date)) {
 
-
-    if (!date) {
-
-      alert("لطفاً تاریخ پرواز را وارد کنید.");
+      alert(
+        "تاریخ معتبر نیست.\nمثال: ۱۴۰۵/۰۷/۰۷"
+      );
 
       return;
-
     }
 
 
     if (!origin || !destination) {
 
-      alert("لطفاً مبدأ و مقصد را وارد کنید.");
-
-      return;
-
-    }
-
-
-    if (origin.length < 3 ||
-        destination.length < 3) {
-
       alert(
-        "کد مبدأ و مقصد باید حداقل ۳ حرف داشته باشد."
+        "لطفاً مبدأ و مقصد را وارد کنید."
       );
 
       return;
+    }
 
+
+    if (
+      origin.length < 3 ||
+      destination.length < 3
+    ) {
+
+      alert(
+        "کد مبدأ و مقصد باید حداقل ۳ حرف باشد."
+      );
+
+      return;
     }
 
 
@@ -1301,7 +1191,6 @@
       );
 
       return;
-
     }
 
 
@@ -1311,14 +1200,11 @@
 
       datePersian: date,
 
-      dateGregorian:
-        getTodayGregorianISO(),
+      origin: origin,
 
-      origin,
+      destination: destination,
 
-      destination,
-
-      minutes
+      minutes: minutes
 
     };
 
@@ -1327,10 +1213,6 @@
 
     saveFlights();
 
-
-    /*
-     * پاک کردن فرم
-     */
 
     document
       .getElementById("origin")
@@ -1348,11 +1230,6 @@
     updatePreview();
 
     renderAll();
-
-
-    alert(
-      "پرواز با موفقیت ثبت شد ✈️"
-    );
 
   }
 
@@ -1372,7 +1249,6 @@
         .trim()
         .toUpperCase();
 
-
     const destination =
       document
         .getElementById("destination")
@@ -1380,14 +1256,12 @@
         .trim()
         .toUpperCase();
 
-
     const duration =
       parseDuration(
         document
           .getElementById("duration")
           .value
       );
-
 
     const preview =
       document
@@ -1400,23 +1274,26 @@
       duration > 0
     ) {
 
-      preview.style.display = "block";
-
+      preview.style.display =
+        "block";
 
       document
         .getElementById("previewRoute")
         .textContent =
-        `${origin} → ${destination}`;
-
+        origin + " → " + destination;
 
       document
         .getElementById("previewDuration")
         .textContent =
-        `⏱ ${formatDurationPersian(duration)}`;
+        "⏱ " +
+        formatDurationPersian(
+          duration
+        );
 
     } else {
 
-      preview.style.display = "none";
+      preview.style.display =
+        "none";
 
     }
 
@@ -1432,28 +1309,33 @@
   function getFilteredFlights() {
 
     const filter =
-      document
-        .getElementById("filterMonth")
-        .value;
+      normalizePersianDate(
+        document
+          .getElementById("filterMonth")
+          .value
+      );
 
 
     if (!filter) {
-
-      return [...flights];
-
+      return flights.slice();
     }
 
 
-    /*
-     * filterMonth میلادی است.
-     * برای تاریخ ذخیره‌شده، از dateGregorian
-     * استفاده می‌کنیم.
-     */
+    const month =
+      filter.substring(0, 7);
+
 
     return flights.filter(
-      flight =>
-        flight.dateGregorian &&
-        flight.dateGregorian.startsWith(filter)
+      function(flight) {
+
+        const date =
+          normalizePersianDate(
+            flight.datePersian || ""
+          );
+
+        return date.substring(0, 7) === month;
+
+      }
     );
 
   }
@@ -1468,8 +1350,16 @@
   function calculateTotal(list) {
 
     return list.reduce(
-      (sum, flight) =>
-        sum + Number(flight.minutes || 0),
+      function(sum, flight) {
+
+        return (
+          sum +
+          Number(
+            flight.minutes || 0
+          )
+        );
+
+      },
       0
     );
 
@@ -1478,7 +1368,7 @@
 
   /*
    * ==========================================
-   * RENDER DASHBOARD
+   * DASHBOARD
    * ==========================================
    */
 
@@ -1494,16 +1384,25 @@
 
     const yearFlights =
       flights.filter(
-        flight =>
-          flight.datePersian &&
-          flight.datePersian.startsWith(
+        function(flight) {
+
+          const date =
+            normalizePersianDate(
+              flight.datePersian || ""
+            );
+
+          return date.startsWith(
             currentYear + "/"
-          )
+          );
+
+        }
       );
 
 
     const yearTotal =
-      calculateTotal(yearFlights);
+      calculateTotal(
+        yearFlights
+      );
 
 
     document
@@ -1517,7 +1416,9 @@
     document
       .getElementById("totalFlightTime")
       .textContent =
-      formatDurationPersian(total);
+      formatDurationPersian(
+        total
+      );
 
 
     document
@@ -1531,14 +1432,16 @@
     document
       .getElementById("yearFlightTime")
       .textContent =
-      formatDurationPersian(yearTotal);
+      formatDurationPersian(
+        yearTotal
+      );
 
   }
 
 
   /*
    * ==========================================
-   * RENDER HISTORY
+   * HISTORY
    * ==========================================
    */
 
@@ -1563,99 +1466,156 @@
     document
       .getElementById("filteredTotal")
       .textContent =
-      formatDurationPersian(total);
+      formatDurationPersian(
+        total
+      );
 
 
     if (list.length === 0) {
 
-      container.innerHTML = `
-        <div class="empty">
-          ✈️ هنوز پروازی ثبت نشده است.
-        </div>
-      `;
+      container.innerHTML =
+        '<div class="empty">' +
+        '✈️ هنوز پروازی ثبت نشده است.' +
+        '</div>';
 
       return;
-
     }
 
 
-    list.forEach(flight => {
+    list.forEach(
+      function(flight) {
 
-      const record =
-        document.createElement("div");
-
-
-      record.className =
-        "flight-record";
-
-
-      record.innerHTML = `
-
-        <div class="record-top">
-
-          <div class="record-date">
-
-            📅
-            ${toPersianDigits(
-              flight.datePersian || "بدون تاریخ"
-            )}
-
-          </div>
-
-          <div class="record-duration">
-
-            ${formatDurationPersian(
-              flight.minutes
-            )}
-
-          </div>
-
-        </div>
+        const record =
+          document.createElement(
+            "div"
+          );
 
 
-        <div class="record-route">
-
-          ${escapeHTML(flight.origin)}
-          →
-          ${escapeHTML(flight.destination)}
-
-        </div>
+        record.className =
+          "flight-record";
 
 
-        <div class="record-gregorian">
+        const top =
+          document.createElement(
+            "div"
+          );
 
-          ${flight.dateGregorian || ""}
-
-        </div>
-
-
-        <div class="record-actions">
-
-          <button
-            class="btn btn-secondary btn-small"
-            onclick="editFlight('${flight.id}')">
-
-            ✏️ ویرایش
-
-          </button>
+        top.className =
+          "record-top";
 
 
-          <button
-            class="btn btn-danger btn-small"
-            onclick="deleteFlight('${flight.id}')">
+        const date =
+          document.createElement(
+            "div"
+          );
 
-            🗑 حذف
+        date.className =
+          "record-date";
 
-          </button>
+        date.textContent =
+          "📅 " +
+          toPersianDigits(
+            flight.datePersian ||
+            "بدون تاریخ"
+          );
 
-        </div>
 
-      `;
+        const duration =
+          document.createElement(
+            "div"
+          );
+
+        duration.className =
+          "record-duration";
+
+        duration.textContent =
+          formatDurationPersian(
+            flight.minutes
+          );
 
 
-      container.appendChild(record);
+        top.appendChild(date);
+        top.appendChild(duration);
 
-    });
+
+        const route =
+          document.createElement(
+            "div"
+          );
+
+        route.className =
+          "record-route";
+
+        route.textContent =
+          flight.origin +
+          " → " +
+          flight.destination;
+
+
+        const actions =
+          document.createElement(
+            "div"
+          );
+
+        actions.className =
+          "record-actions";
+
+
+        const editButton =
+          document.createElement(
+            "button"
+          );
+
+        editButton.className =
+          "btn btn-secondary btn-small";
+
+        editButton.textContent =
+          "✏️ ویرایش";
+
+        editButton.addEventListener(
+          "click",
+          function() {
+            editFlight(flight.id);
+          }
+        );
+
+
+        const deleteButton =
+          document.createElement(
+            "button"
+          );
+
+        deleteButton.className =
+          "btn btn-danger btn-small";
+
+        deleteButton.textContent =
+          "🗑 حذف";
+
+        deleteButton.addEventListener(
+          "click",
+          function() {
+            deleteFlight(flight.id);
+          }
+        );
+
+
+        actions.appendChild(
+          editButton
+        );
+
+        actions.appendChild(
+          deleteButton
+        );
+
+
+        record.appendChild(top);
+        record.appendChild(route);
+        record.appendChild(actions);
+
+        container.appendChild(record);
+
+      }
+    );
 
   }
 
@@ -1666,54 +1626,61 @@
    * ==========================================
    */
 
-  window.editFlight =
-    function(id) {
+  function editFlight(id) {
 
-      const flight =
-        flights.find(
-          f => f.id === id
-        );
-
-
-      if (!flight) return;
+    const flight =
+      flights.find(
+        function(item) {
+          return item.id === id;
+        }
+      );
 
 
-      document
-        .getElementById("editId")
-        .value = flight.id;
+    if (!flight) {
+      return;
+    }
 
 
-      document
-        .getElementById("editDate")
-        .value =
-        flight.datePersian;
+    document
+      .getElementById("editId")
+      .value =
+      flight.id;
 
 
-      document
-        .getElementById("editOrigin")
-        .value =
-        flight.origin;
+    document
+      .getElementById("editDate")
+      .value =
+      toPersianDigits(
+        flight.datePersian
+      );
 
 
-      document
-        .getElementById("editDestination")
-        .value =
-        flight.destination;
+    document
+      .getElementById("editOrigin")
+      .value =
+      flight.origin;
 
 
-      document
-        .getElementById("editDuration")
-        .value =
-        formatDuration(
-          flight.minutes
-        );
+    document
+      .getElementById("editDestination")
+      .value =
+      flight.destination;
 
 
-      document
-        .getElementById("editModal")
-        .style.display = "flex";
+    document
+      .getElementById("editDuration")
+      .value =
+      formatDuration(
+        flight.minutes
+      );
 
-    };
+
+    document
+      .getElementById("editModal")
+      .style.display =
+      "flex";
+
+  }
 
 
   /*
@@ -1732,11 +1699,15 @@
 
     const flight =
       flights.find(
-        f => f.id === id
+        function(item) {
+          return item.id === id;
+        }
       );
 
 
-    if (!flight) return;
+    if (!flight) {
+      return;
+    }
 
 
     const date =
@@ -1771,17 +1742,36 @@
       );
 
 
-    if (!date ||
-        !origin ||
-        !destination ||
-        minutes <= 0) {
+    if (!isValidPersianDate(date)) {
 
       alert(
-        "اطلاعات واردشده معتبر نیست."
+        "تاریخ واردشده معتبر نیست."
       );
 
       return;
+    }
 
+
+    if (
+      origin.length < 3 ||
+      destination.length < 3
+    ) {
+
+      alert(
+        "کد مبدأ و مقصد باید حداقل ۳ حرف باشد."
+      );
+
+      return;
+    }
+
+
+    if (minutes <= 0) {
+
+      alert(
+        "مدت پرواز معتبر نیست."
+      );
+
+      return;
     }
 
 
@@ -1813,38 +1803,49 @@
    * ==========================================
    */
 
-  window.deleteFlight =
-    function(id) {
+  function deleteFlight(id) {
 
-      const flight =
-        flights.find(
-          f => f.id === id
-        );
-
-
-      if (!flight) return;
+    const flight =
+      flights.find(
+        function(item) {
+          return item.id === id;
+        }
+      );
 
 
-      const confirmed =
-        confirm(
-          `پرواز ${flight.origin} → ${flight.destination} حذف شود؟`
-        );
+    if (!flight) {
+      return;
+    }
 
 
-      if (!confirmed) return;
+    const confirmed =
+      confirm(
+        "پرواز " +
+        flight.origin +
+        " → " +
+        flight.destination +
+        " حذف شود؟"
+      );
 
 
-      flights =
-        flights.filter(
-          f => f.id !== id
-        );
+    if (!confirmed) {
+      return;
+    }
 
 
-      saveFlights();
+    flights =
+      flights.filter(
+        function(item) {
+          return item.id !== id;
+        }
+      );
 
-      renderAll();
 
-    };
+    saveFlights();
+
+    renderAll();
+
+  }
 
 
   /*
@@ -1857,25 +1858,8 @@
 
     document
       .getElementById("editModal")
-      .style.display = "none";
-
-  }
-
-
-  /*
-   * ==========================================
-   * ESCAPE HTML
-   * ==========================================
-   */
-
-  function escapeHTML(value) {
-
-    return String(value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+      .style.display =
+      "none";
 
   }
 
@@ -1903,24 +1887,19 @@
 
   document.addEventListener(
     "DOMContentLoaded",
-    () => {
+    function() {
 
       loadFlights();
 
 
-      /*
-       * تاریخ امروز
-       */
+      const dateInput =
+        document
+          .getElementById("flightDate");
 
-      document
-        .getElementById("flightDate")
-        .value =
+
+      dateInput.value =
         getTodayPersian();
 
-
-      /*
-       * ذخیره پرواز
-       */
 
       document
         .getElementById("btnSaveFlight")
@@ -1930,47 +1909,37 @@
         );
 
 
-      /*
-       * Preview
-       */
-
       [
         "origin",
         "destination",
         "duration"
-      ].forEach(id => {
+      ].forEach(
+        function(id) {
 
-        document
-          .getElementById(id)
-          .addEventListener(
-            "input",
-            updatePreview
-          );
+          document
+            .getElementById(id)
+            .addEventListener(
+              "input",
+              updatePreview
+            );
 
-      });
+        }
+      );
 
-
-      /*
-       * فیلتر
-       */
 
       document
         .getElementById("filterMonth")
         .addEventListener(
-          "change",
+          "input",
           renderHistory
         );
 
-
-      /*
-       * پاک کردن فیلتر
-       */
 
       document
         .getElementById("btnClearFilter")
         .addEventListener(
           "click",
-          () => {
+          function() {
 
             document
               .getElementById("filterMonth")
@@ -1982,10 +1951,6 @@
         );
 
 
-      /*
-       * Update
-       */
-
       document
         .getElementById("btnUpdateFlight")
         .addEventListener(
@@ -1993,10 +1958,6 @@
           updateFlight
         );
 
-
-      /*
-       * Cancel
-       */
 
       document
         .getElementById("btnCancelEdit")
@@ -2006,15 +1967,11 @@
         );
 
 
-      /*
-       * کلیک بیرون مودال
-       */
-
       document
         .getElementById("editModal")
         .addEventListener(
           "click",
-          event => {
+          function(event) {
 
             if (
               event.target.id ===
