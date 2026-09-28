@@ -16,12 +16,24 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
+    - name: Set up Python for Icon Processing
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Imaging Library
+      run: pip install pillow
+
     - name: Setup Android Project & App Structure
       run: |
         mkdir -p app/src/main/java/com/avafix/logbook
         mkdir -p app/src/main/assets
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/values
+        mkdir -p app/src/main/res/mipmap-hdpi
+        mkdir -p app/src/main/res/mipmap-xhdpi
+        mkdir -p app/src/main/res/mipmap-xxhdpi
+        mkdir -p app/src/main/res/mipmap-xxxhdpi
 
         # 1. settings.gradle
         cat << 'EOF' > settings.gradle
@@ -48,8 +60,8 @@ jobs:
                 applicationId "com.avafix.logbook"
                 minSdk 24
                 targetSdk 34
-                versionCode 8
-                versionName "2.5"
+                versionCode 9
+                versionName "2.6"
             }
             buildTypes {
                 release {
@@ -60,15 +72,73 @@ jobs:
         }
         EOF
 
-        # 4. styles.xml
-        cat << 'EOF' > app/src/main/res/values/styles.xml
-        <?xml version="1.0" encoding="utf-8"?>
-        <resources>
-            <style name="Theme.AvaFix" parent="android:Theme.Material.NoActionBar">
-                <item name="android:statusBarColor">#0B0E14</item>
-            </style>
-        </resources>
+        # 4. Generate Ava Tail Icon (EP-RBD Calligraphy Heart Livery)
+        cat << 'EOF' > make_icon.py
+        import math
+        from PIL import Image, ImageDraw
+
+        def generate_ava_icon(size):
+            img = Image.new("RGBA", (size, size), (9, 11, 16, 255))
+            draw = ImageDraw.Draw(img)
+            
+            # Big Red AVA Circle
+            r = size * 0.44
+            cx, cy = size * 0.5, size * 0.5
+            draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(211, 26, 43, 255))
+            
+            # Dark Maroon Tail Arc
+            arc_r = size * 0.38
+            draw.ellipse([cx - arc_r - size*0.06, cy - arc_r - size*0.06, cx + arc_r - size*0.06, cy + arc_r - size*0.06], fill=(122, 7, 22, 255))
+            draw.ellipse([cx - r*0.9, cy - r*0.9 + size*0.05, cx + r*0.9, cy + r*0.9 + size*0.05], fill=(211, 26, 43, 255))
+            
+            # Parametric Calligraphy Heart Points (White)
+            steps = 420
+            heart_scale = size * 0.016
+            heart_cx = cx + size * 0.01
+            heart_cy = cy - size * 0.03
+            
+            for i in range(steps):
+                t = (2 * math.pi * i) / steps
+                # Heart equation
+                x = 16 * (math.sin(t) ** 3)
+                y = -(13 * math.cos(t) - 5 * math.cos(2*t) - 2 * math.cos(3*t) - math.cos(4*t))
+                
+                px = heart_cx + x * heart_scale
+                py = heart_cy + y * heart_scale
+                
+                pt_radius = (size * 0.012) + (math.sin(t*3) * (size * 0.006))
+                draw.ellipse([px - pt_radius, py - pt_radius, px + pt_radius, py + pt_radius], fill=(255, 255, 255, 240))
+
+            # Cascade of AVA Red & White Polka Dots on the bottom-right tail curve
+            dots = [
+                (0.72, 0.65, 0.038, (255, 255, 255, 230)),
+                (0.78, 0.73, 0.030, (255, 255, 255, 230)),
+                (0.68, 0.77, 0.026, (211, 26, 43, 255)),
+                (0.60, 0.82, 0.022, (255, 255, 255, 210)),
+                (0.52, 0.85, 0.018, (211, 26, 43, 255)),
+                (0.82, 0.81, 0.020, (255, 255, 255, 200)),
+                (0.44, 0.88, 0.014, (255, 255, 255, 200))
+            ]
+            for dx, dy, dr, col in dots:
+                px = size * dx
+                py = size * dy
+                rad = size * dr
+                draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=col)
+
+            return img
+
+        sizes = {
+            "app/src/main/res/mipmap-hdpi/ic_launcher.png": 72,
+            "app/src/main/res/mipmap-xhdpi/ic_launcher.png": 96,
+            "app/src/main/res/mipmap-xxhdpi/ic_launcher.png": 144,
+            "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": 192
+        }
+
+        for path, s in sizes.items():
+            icon = generate_ava_icon(s)
+            icon.save(path, "PNG")
         EOF
+        python make_icon.py
 
         # 5. AndroidManifest.xml
         cat << 'EOF' > app/src/main/AndroidManifest.xml
@@ -76,7 +146,8 @@ jobs:
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <application
                 android:label="AvaFix"
-                android:theme="@style/Theme.AvaFix">
+                android:icon="@mipmap/ic_launcher"
+                android:theme="@android:style/Theme.Material.NoActionBar">
                 <activity
                     android:name=".MainActivity"
                     android:windowSoftInputMode="adjustResize"
@@ -137,8 +208,10 @@ jobs:
           <style>
             :root {
               --red: #D31A2B;
+              --red-dark: #8F101C;
               --bg: #090B10;
               --card: #131722;
+              --card-sec: #181E2B;
               --border: #242A38;
               --text: #F3F4F6;
               --sub: #94A3B8;
@@ -146,113 +219,139 @@ jobs:
               --ok: #10B981;
             }
             * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-            body { background: var(--bg); color: var(--text); padding: 16px 14px 70px; min-height: 100vh; }
+            body { background: var(--bg); color: var(--text); padding: 14px 12px 60px; min-height: 100vh; }
             
-            .header-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
-            .badge-top { display: inline-flex; align-items: center; background: rgba(211,26,43,0.15); border: 1px solid rgba(211,26,43,0.35); padding: 3px 10px; border-radius: 99px; color: var(--red); font-size: 11px; font-weight: 800; letter-spacing: 0.5px; }
-            h1 { font-size: 21px; font-weight: 900; margin-top: 4px; text-align: center; }
-            
-            /* Card Containers */
-            .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 14px; position: relative; }
+            .header-bar { text-align: center; margin-bottom: 12px; }
+            .badge-top { display: inline-flex; align-items: center; background: rgba(211,26,43,0.15); border: 1px solid rgba(211,26,43,0.35); padding: 3px 12px; border-radius: 99px; color: var(--red); font-size: 11px; font-weight: 800; letter-spacing: 1px; }
+            h1 { font-size: 20px; font-weight: 900; margin-top: 4px; letter-spacing: 0.5px; }
+
+            .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
             .card.accent { border-right: 4px solid var(--red); }
             
-            label { display: block; font-size: 11px; color: var(--sub); margin: 8px 0 4px; font-weight: 700; }
+            label { display: block; font-size: 11px; color: var(--sub); margin: 6px 0 4px; font-weight: 700; text-transform: uppercase; }
             select, input {
-              width: 100%; background: #0C0F17; border: 1px solid #283042; border-radius: 10px; color: #FFF; padding: 11px 12px; font-size: 14px; font-weight: 700; outline: none; transition: border-color 0.2s;
+              width: 100%; background: #0A0C13; border: 1px solid #283042; border-radius: 10px; color: #FFF; padding: 11px 12px; font-size: 14px; font-weight: 700; outline: none; transition: border-color 0.2s;
             }
             select:focus, input:focus { border-color: var(--red); }
+            .input-en { direction: ltr; text-align: left; text-transform: uppercase; font-family: monospace; letter-spacing: 1px; }
             
-            .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+            .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
             
-            /* Calendar Switcher */
-            .cal-selector-bar { display: flex; background: #0A0C12; border: 1px solid var(--border); border-radius: 10px; padding: 3px; margin-bottom: 10px; }
-            .cal-btn { flex: 1; border: none; background: none; color: var(--sub); padding: 7px; font-size: 12px; font-weight: 800; border-radius: 8px; cursor: pointer; }
+            .cal-selector-bar { display: flex; background: #0A0C12; border: 1px solid var(--border); border-radius: 10px; padding: 3px; margin-bottom: 8px; }
+            .cal-btn { flex: 1; border: none; background: none; color: var(--sub); padding: 6px; font-size: 11px; font-weight: 800; border-radius: 8px; cursor: pointer; }
             .cal-btn.active { background: var(--red); color: #fff; }
 
-            .btn-primary { width: 100%; margin-top: 14px; background: #1F2737; border: 1px solid #333F56; color: #FFF; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; }
-            .btn-primary:active { opacity: 0.8; }
-            .btn-sum { width: 100%; margin-top: 14px; background: var(--red); border: none; color: #fff; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 900; cursor: pointer; }
-            
-            .route-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
-            .route-info b { font-size: 14px; color: #fff; display: block; }
+            .btn-primary { width: 100%; margin-top: 12px; background: #1C2333; border: 1px solid #333F56; color: #FFF; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; }
+            .btn-sum { width: 100%; margin-top: 10px; background: var(--red); border: none; color: #fff; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 900; cursor: pointer; }
+            .btn-save { width: 100%; margin-top: 8px; background: #1B2936; border: 1px solid #28543E; color: var(--ok); padding: 11px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+            .route-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+            .route-info b { font-size: 13px; color: #fff; display: block; font-family: monospace; }
             .route-info span { font-size: 11px; color: var(--sub); }
-            .route-action { display: flex; align-items: center; gap: 8px; }
+            .route-action { display: flex; align-items: center; gap: 6px; }
             .route-badge { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: var(--gold); padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: 800; direction: ltr; }
-            .btn-del { background: rgba(211,26,43,0.15); border: 1px solid rgba(211,26,43,0.3); color: var(--red); font-size: 13px; width: 28px; height: 28px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+            .btn-del { background: rgba(211,26,43,0.15); border: 1px solid rgba(211,26,43,0.3); color: var(--red); font-size: 12px; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
             
-            .total-card { background: linear-gradient(135deg, #131722 0%, #1e1317 100%); border: 1px solid rgba(211,26,43,0.4); border-radius: 16px; padding: 18px; text-align: center; margin-top: 14px; }
-            .tot-title { font-size: 12px; color: var(--sub); font-weight: 700; }
-            .tot-val { font-size: 34px; font-weight: 900; color: var(--ok); margin: 6px 0; font-variant-numeric: tabular-nums; direction: ltr; }
-            .tot-sub { font-size: 12px; color: var(--sub); }
+            /* Drawer Folder Archive */
+            .folder-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
+            .folder-title { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; color: #CBD5E1; }
+            .folder-badge { background: rgba(255,255,255,0.08); padding: 2px 7px; border-radius: 6px; font-size: 10px; }
+            .archive-list { margin-top: 12px; display: none; }
+            .archive-item { background: var(--card-sec); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+            
+            .total-card { background: linear-gradient(135deg, #131722 0%, #1e1317 100%); border: 1px solid rgba(211,26,43,0.4); border-radius: 14px; padding: 16px; text-align: center; margin-top: 10px; }
+            .tot-title { font-size: 11px; color: var(--sub); font-weight: 700; }
+            .tot-val { font-size: 32px; font-weight: 900; color: var(--ok); margin: 4px 0; font-variant-numeric: tabular-nums; direction: ltr; }
+            .tot-sub { font-size: 11px; color: var(--sub); }
           </style>
         </head>
         <body>
 
-          <!-- Top Brand Header -->
-          <div style="text-align: center; margin-bottom: 14px;">
+          <!-- Header -->
+          <div class="header-bar">
             <div class="badge-top">✈ AVA AIRLINES CREW</div>
             <h1>AvaFix Logbook</h1>
           </div>
 
-          <!-- Month & Year Selector Card (1405 to 1415 / 2026 to 2036) -->
+          <!-- Month & Year Selector (1405 to 1415 / 2026 to 2036) -->
           <div class="card">
             <div class="cal-selector-bar">
               <button class="cal-btn active" id="btnShamsi" onclick="setCalType('shamsi')">تقویم شمسی</button>
-              <button class="cal-btn" id="btnMiladi" onclick="setCalType('miladi')">تقویم میلادی (UTC)</button>
+              <button class="cal-btn" id="btnMiladi" onclick="setCalType('miladi')">CALENDAR (UTC)</button>
             </div>
             
             <div class="grid-2">
               <div>
-                <label>سال کاری</label>
+                <label>سال پروازی</label>
                 <select id="yearSelect" onchange="onPeriodChanged()"></select>
               </div>
               <div>
-                <label>ماه کاری</label>
+                <label>ماه پروازی</="card">
+            <div class="cal-selector-bar">
+              <button class="cal-btn active" id="btnShamsi" onclick="setCalType('shamsi')">تقویم شمسی</button>
+              <button class="cal-btn" id="btnMiladi" onclick="setCalType('miladi')">CALENDAR (UTC)</button>
+            </div>
+            
+            <div class="grid-2">
+              <div>
+                <label>سال پروازی</label>
+                <select id="yearSelect" onchange="onPeriodChanged()"></select>
+              </div>
+              <div>
+                <label>ماه پروازی</label>
                 <select id="monthSelect" onchange="onPeriodChanged()"></select>
               </div>
             </div>
           </div>
 
-          <!-- Route Selection Card -->
+          <!-- FIXED TIME & Route Selection -->
           <div class="card accent">
-            <label>انتخاب روت مصوب آوا</label>
+            <label style="color:var(--gold); font-size:12px;">FIXED TIME</label>
             <select id="routeSelect" onchange="onRouteSelected()"></select>
 
             <div class="grid-2">
               <div>
-                <label>کد روت</label>
-                <input type="text" id="routeCodeInput" placeholder="مثال: THR-MHD">
+                <label>ROUTE CODE (ICAO/IATA)</label>
+                <input type="text" id="routeCodeInput" class="input-en" placeholder="E.G. THR-MHD">
               </div>
               <div>
-                <label>فیکس تایم (HH:MM)</label>
-                <input type="text" id="fixTimeInput" placeholder="01:45" style="direction:ltr; text-align:center; font-weight:900; color:var(--gold);">
+                <label>FIXED BLOCK (HH:MM)</label>
+                <input type="text" id="fixTimeInput" class="input-en" placeholder="01:45" style="text-align:center; font-weight:900; color:var(--gold);">
               </div>
             </div>
 
-            <button class="btn-primary" onclick="addFlightRoute()">+ افزودن این روت به لاگ‌بوک</button>
+            <button class="btn-primary" onclick="addFlightRoute()">+ ADD FLIGHT LEG</button>
           </div>
 
-          <!-- Current Month's Route List -->
+          <!-- Current Month Log List -->
           <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-              <span style="font-weight:800; font-size:13px;" id="listTitleHeader">روت‌های ثبت شده</span>
-              <span style="font-size:11px; color:var(--red); cursor:pointer; font-weight:700;" onclick="clearCurrentLog()">پاکسازی این ماه</span>
-            </div>
-            
-            <div id="routesListContainer"></div>
-            
-            <button class="btn-sum" onclick="calculateTotalHours()">🧮 محاسبه و بستن جمع ساعات</button>
-          </div>
-
-          <!-- Summary Box -->
-          <div class="total-card" id="summaryBox" style="display:none;">
-            <div class="tot-title">مجموع ساعات فیکس پرواز (Total Block Time)</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+              <span style="font-weight:800; font-size:12px;" id="listTitleHeader">روت‌های ثبت شده</span>
+              <span style="font-size:11px; color:var(--red); cursor:pointer; font-weight: Block Time)</div>
             <div class="tot-val" id="totalDisplay">00:00</div>
             <div class="tot-sub" id="totalCountDisplay">۰ لگ پروازی • ۰ دقیقه</div>
           </div>
 
+          <!-- Collapsible Drawer Folder: Saved Archive -->
+          <div class="card" style="margin-top:14px; background:#0F121B;">
+            <div class="folder-header" onclick="toggleArchiveFolder()">
+              <div class="folder-title">
+                <span>📁</span>
+                <span>بایگانی گزارش‌های ذخیره‌شده (Saved Archive)</span>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span class="folder-badge" id="archiveCountBadge">0 ذخیره</span>
+                <span id="folderChevron" style="font-size:12px; color:var(--sub);">▼</span>
+              </div>
+            </div>
+
+            <div class="archive-list" id="archiveContainer">
+              <!-- Dynamically populated archive logs -->
+            </div>
+          </div>
+
           <script>
-            // Database of Ava Airlines Approved Fix Times
+            // Database of Ava Airlines Approved Routes
             const AVA_ROUTES = [
               { code: "THR-MHD", name: "تهران ⇄ مشهد", dur: "01:45", min: 105 },
               { code: "MHD-THR", name: "مشهد ⇄ تهران", dur: "01:55", min: 115 },
@@ -317,7 +416,7 @@ jobs:
             ];
 
             const SHAMSI_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
-            const MILADI_MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+            const MILADI_MONTHS = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
 
             let currentCal = localStorage.getItem("ava_cal") || "shamsi";
             let currentYear = localStorage.getItem("ava_year") || "1405";
@@ -340,7 +439,6 @@ jobs:
               mSel.innerHTML = "";
 
               if (currentCal === "shamsi") {
-                // 10 Years: 1405 to 1415
                 for (let y = 1405; y <= 1415; y++) {
                   const opt = document.createElement("option");
                   opt.value = y;
@@ -355,11 +453,10 @@ jobs:
                 });
                 if (!currentYear.startsWith("14")) currentYear = "1405";
               } else {
-                // 10 Years: 2026 to 2036
                 for (let y = 2026; y <= 2036; y++) {
                   const opt = document.createElement("option");
                   opt.value = y;
-                  opt.textContent = `Year ${y}`;
+                  opt.textContent = `YEAR ${y}`;
                   ySel.appendChild(opt);
                 }
                 MILADI_MONTHS.forEach((m, idx) => {
@@ -397,7 +494,7 @@ jobs:
 
             function initRoutes() {
               const sel = document.getElementById("routeSelect");
-              sel.innerHTML = '<option value="-1">-- برای انتخاب روت لمس کنید --</option>';
+              sel.innerHTML = '<option value="-1">-- جهت انتخاب روت لمس نمایید --</option>';
               AVA_ROUTES.forEach((r, idx) => {
                 const opt = document.createElement("option");
                 opt.value = idx;
@@ -423,10 +520,10 @@ jobs:
             }
 
             function addFlightRoute() {
-              const code = document.getElementById("routeCodeInput").value.trim();
+              const code = document.getElementById("routeCodeInput").value.trim().toUpperCase();
               const dur = document.getElementById("fixTimeInput").value.trim();
               if (!code || !dur) {
-                alert("لطفاً روت و فیکس تایم را وارد یا انتخاب کنید.");
+                alert("لطفاً روت و فیکس تایم را وارد یا انتخاب نمایید.");
                 return;
               }
               const p = dur.split(":");
@@ -468,7 +565,7 @@ jobs:
               const container = document.getElementById("routesListContainer");
               container.innerHTML = "";
               if (list.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding:14px 0; color:var(--sub); font-size:12px;">هنوز روتی برای این ماه ثبت نشده است.</div>';
+                container.innerHTML = '<div style="text-align:center; padding:12px 0; color:var(--sub); font-size:12px;">هنوز روتی برای این ماه ثبت نشده است.</div>';
                 return;
               }
               list.forEach((item, index) => {
@@ -477,52 +574,9 @@ jobs:
                 el.innerHTML = `
                   <div class="route-info">
                     <b>${index + 1}. ${item.code}</b>
-                    <span>فیکس مصوب: ${item.dur} (${item.min} دقیقه)</span>
+                    <span>فیکس: ${item.dur} (${item.min} دقیقه)</span>
                   </div>
                   <div class="route-action">
                     <div class="route-badge">${item.dur}</div>
                     <button class="btn-del" onclick="deleteFlight(${item.id})">✕</button>
-                  </div>
-                `;
-                container.appendChild(el);
-              });
-            }
-
-            function calculateTotalHours() {
-              const list = getFlights();
-              if (list.length === 0) {
-                alert("هیچ روتی برای محاسبه در این ماه وجود ندارد.");
-                return;
-              }
-              let sumMin = 0;
-              list.forEach(i => sumMin += i.min);
-              const hours = Math.floor(sumMin / 60);
-              const minutes = sumMin % 60;
-              const formatted = String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0");
-
-              document.getElementById("totalDisplay").innerText = formatted;
-              document.getElementById("totalCountDisplay").innerText = `${list.length} لگ پروازی • ${sumMin} دقیقه مجموع پرواز`;
-              document.getElementById("summaryBox").style.display = "block";
-              window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-            }
-
-            window.onload = function() {
-              initRoutes();
-              setCalType(currentCal);
-            };
-          </script>
-        </body>
-        </html>
-        EOF
-
-    - name: Build Release APK with Gradle
-      run: |
-        chmod +x gradlew || gradle wrapper --gradle-version 8.5
-        chmod +x gradlew
-        ./gradlew assembleRelease --no-daemon
-
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: AvaFix-v2.5
-        path: app/build/outputs/apk/release/*.apk
+                  <
