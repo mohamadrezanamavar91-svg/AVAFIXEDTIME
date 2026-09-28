@@ -8,6 +8,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
     - name: Set up Java 17
       uses: actions/setup-java@v4
       with:
@@ -17,100 +20,43 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Create Complete Project
+    - name: Install Cordova
+      run: npm install -g cordova
+
+    - name: Create App & Build APK
       run: |
-        mkdir -p app/src/main/java/com/avacrew/avafix
-        mkdir -p app/src/main/res/values
-
-        cat << 'EOF' > app/src/main/res/values/strings.xml
-        <resources>
-            <string name="app_name">AvaFix</string>
-        </resources>
+        cordova create avafix com.avacrew.avafix AvaFix
+        cd avafix
+        cat << 'EOF' > www/index.html
+        <!DOCTYPE html>
+        <html lang="fa" dir="rtl">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>AvaFix</title>
+          <style>
+            body { font-family: sans-serif; background: #0b132b; color: #fff; padding: 20px; text-align: center; }
+            .card { background: #1c2541; padding: 20px; border-radius: 12px; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+            h2 { color: #48cae4; }
+            .badge { background: #3a506b; padding: 8px 12px; border-radius: 6px; display: inline-block; margin: 5px; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <h2>سامانه AvaFix</h2>
+            <p>ثبت و محاسبه اتوماتیک ساعات پرواز بر اساس Fix Time</p>
+            <hr style="border-color: #3a506b;">
+            <div class="badge">MHD-RAS-MHD: ۲۵۰ دقیقه</div>
+            <div class="badge">MHD-BGW-MHD: ۳۷۵ دقیقه</div>
+          </div>
+        </body>
+        </html>
         EOF
-
-        cat << 'EOF' > settings.gradle
-        rootProject.name = "AvaFix"
-        include ':app'
-        EOF
-
-        cat << 'EOF' > build.gradle
-        buildscript {
-            repositories {
-                google()
-                mavenCentral()
-            }
-            dependencies {
-                classpath 'com.android.tools.build:gradle:8.2.2'
-            }
-        }
-        allprojects {
-            repositories {
-                google()
-                mavenCentral()
-            }
-        }
-        EOF
-
-        cat << 'EOF' > app/build.gradle
-        apply plugin: 'com.android.application'
-
-        android {
-            namespace 'com.avacrew.avafix'
-            compileSdk 34
-
-            defaultConfig {
-                applicationId "com.avacrew.avafix"
-                minSdk 26
-                targetSdk 34
-                versionCode 1
-                versionName "1.0"
-            }
-
-            buildTypes {
-                release {
-                    minifyEnabled false
-                }
-            }
-            compileOptions {
-                sourceCompatibility JavaVersion.VERSION_17
-                targetCompatibility JavaVersion.VERSION_17
-            }
-        }
-
-        dependencies {
-            implementation 'androidx.appcompat:appcompat:1.6.1'
-        }
-        EOF
-
-        cat << 'EOF' > app/src/main/AndroidManifest.xml
-        <?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            <application
-                android:allowBackup="true"
-                android:icon="@android:drawable/sym_def_app_icon"
-                android:label="@string/app_name"
-                android:supportsRtl="true"
-                android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
-                <activity
-                    android:name=".MainActivity"
-                    android:exported="true">
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN" />
-                        <category android:name="android.intent.category.LAUNCHER" />
-                    </intent-filter>
-                </activity>
-            </application>
-        </manifest>
-        EOF
-
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
-
-    - name: Build Debug APK
-      run: gradle assembleDebug
+        cordova platform add android
+        cordova build android --debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: AvaFix-debug-apk
-        path: app/build/outputs/apk/debug/app-debug.apk
+        name: AvaFix-APK
+        path: avafix/platforms/android/app/build/outputs/apk/debug/app-debug.apk
