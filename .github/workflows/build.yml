@@ -1,8 +1,8 @@
-name: Build AvaFix APK
+name: Build AvaFix App v3.5
 
-on:
+"on":
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
   workflow_dispatch:
 
 permissions:
@@ -11,661 +11,390 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout Source
+        uses: actions/checkout@v4
 
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
 
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v3
-      with:
-        gradle-version: '8.5'
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
+      - name: Scaffold Project & Assets
+        run: |
+          mkdir -p app/src/main/assets
+          mkdir -p app/src/main/res/values
+          mkdir -p app/src/main/java/com/avafix/logbook
 
-    - name: Install Python Dependencies
-      run: pip install Pillow
+          cat << 'EOF' > settings.gradle
+          rootProject.name = "AvaFix"
+          include ':app'
+          EOF
 
-    - name: Build Android Project & Assets
-      run: |
-        mkdir -p app/src/main/assets
-        mkdir -p app/src/main/res/mipmap-hdpi
-        mkdir -p app/src/main/res/mipmap-xhdpi
-        mkdir -p app/src/main/res/mipmap-xxhdpi
-        mkdir -p app/src/main/res/mipmap-xxxhdpi
-        mkdir -p app/src/main/java/com/avafix/logbook
-        mkdir -p app/src/main/res/values
+          cat << 'EOF' > build.gradle
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.2.2'
+                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22'
+              }
+          }
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          EOF
 
-        # 1. ساخت آیکون با پایتون
-        cat << 'EOF' > make_icon.py
-        import math
-        from PIL import Image, ImageDraw
+          cat << 'EOF' > app/build.gradle
+          plugins {
+              id 'com.android.application'
+              id 'kotlin-android'
+          }
 
-        def generate_ava_icon(size):
-            img = Image.new("RGBA", (size, size), (8, 11, 18, 255))
-            draw = ImageDraw.Draw(img)
-            r = size * 0.44
-            cx, cy = size * 0.5, size * 0.5
-            draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(225, 29, 72, 255))
-            steps = 360
-            heart_scale = size * 0.016
-            heart_cx = cx
-            heart_cy = cy - size * 0.02
-            for i in range(steps):
-                t = (2 * math.pi * i) / steps
-                x = 16 * (math.sin(t) ** 3)
-                y = -(13 * math.cos(t) - 5 * math.cos(2*t) - 2 * math.cos(3*t) - math.cos(4*t))
-                px = heart_cx + x * heart_scale
-                py = heart_cy + y * heart_scale
-                rad = (size * 0.012) + (math.sin(t*3) * (size * 0.005))
-                draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 245))
-            return img
+          android {
+              namespace 'com.avafix.logbook'
+              compileSdk 34
 
-        sizes = {
-            "app/src/main/res/mipmap-hdpi/ic_launcher.png": 72,
-            "app/src/main/res/mipmap-xhdpi/ic_launcher.png": 96,
-            "app/src/main/res/mipmap-xxhdpi/ic_launcher.png": 144,
-            "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": 192
-        }
-        for path, s in sizes.items():
-            icon = generate_ava_icon(s)
-            icon.save(path, "PNG")
-        EOF
-        python make_icon.py
+              defaultConfig {
+                  applicationId "com.avafix.logbook"
+                  minSdk 24
+                  targetSdk 34
+                  versionCode 35
+                  versionName "3.5-cockpit"
+              }
 
-        # 2. settings.gradle
-        cat << 'EOF' > settings.gradle
-        pluginManagement {
-            repositories {
-                google()
-                mavenCentral()
-                gradlePluginPortal()
-            }
-        }
-        dependencyResolutionManagement {
-            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-            repositories {
-                google()
-                mavenCentral()
-            }
-        }
-        rootProject.name = "AvaFix"
-        include ':app'
-        EOF
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                      signingConfig signingConfigs.debug
+                  }
+              }
+          }
 
-        # 3. build.gradle اصلی
-        cat << 'EOF' > build.gradle
-        plugins {
-            id 'com.android.application' version '8.2.2' apply false
-        }
-        EOF
+          dependencies {
+              implementation 'androidx.core:core-ktx:1.12.0'
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0'
+              implementation 'androidx.webkit:webkit:1.10.0'
+          }
+          EOF
 
-        # 4. app/build.gradle
-        cat << 'EOF' > app/build.gradle
-        plugins {
-            id 'com.android.application'
-        }
+          cat << 'EOF' > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET" />
+              <application
+                  android:allowBackup="true"
+                  android:icon="@android:drawable/sym_def_app_icon"
+                  android:label="AvaFix Logbook"
+                  android:theme="@style/Theme.AppCompat.NoActionBar">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:configChanges="orientation|screenSize">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
 
-        android {
-            namespace 'com.avafix.logbook'
-            compileSdk 34
+          cat << 'EOF' > app/src/main/res/values/styles.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <resources>
+              <style name="Theme.AppCompat.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+                  <item name="android:windowBackground">#0B0F19</item>
+                  <item name="android:statusBarColor">#0B0F19</item>
+                  <item name="android:navigationBarColor">#0B0F19</item>
+              </style>
+          </resources>
+          EOF
 
-            defaultConfig {
-                applicationId "com.avafix.logbook"
-                minSdk 24
-                targetSdk 34
-                versionCode 16
-                versionName "3.5"
-            }
+          cat << 'EOF' > app/src/main/java/com/avafix/logbook/MainActivity.kt
+          package com.avafix.logbook
 
-            buildTypes {
-                release {
-                    signingConfig signingConfigs.debug
-                    minifyEnabled false
-                }
-            }
-        }
-        EOF
+          import android.annotation.SuppressLint
+          import android.os.Bundle
+          import android.webkit.WebChromeClient
+          import android.webkit.WebSettings
+          import android.webkit.WebView
+          import android.webkit.WebViewClient
+          import androidx.appcompat.app.AppCompatActivity
 
-        # 5. Strings & Manifest
-        cat << 'EOF' > app/src/main/res/values/strings.xml
-        <resources>
-            <string name="app_name">AvaFix</string>
-        </resources>
-        EOF
+          class MainActivity : AppCompatActivity() {
+              @SuppressLint("SetJavaScriptEnabled")
+              override fun onCreate(savedInstanceState: Bundle?) {
+                  super.onCreate(savedInstanceState)
+                  val webView = WebView(this)
+                  setContentView(webView)
 
-        cat << 'EOF' > app/src/main/AndroidManifest.xml
-        <?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            <uses-permission android:name="android.permission.INTERNET" />
-            <application
-                android:label="@string/app_name"
-                android:icon="@mipmap/ic_launcher"
-                android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
-                <activity
-                    android:name=".MainActivity"
-                    android:exported="true">
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN" />
-                        <category android:name="android.intent.category.LAUNCHER" />
-                    </intent-filter>
-                </activity>
-            </application>
-        </manifest>
-        EOF
+                  webView.settings.apply {
+                      javaScriptEnabled = true
+                      domStorageEnabled = true
+                      databaseEnabled = true
+                      allowFileAccess = true
+                      cacheMode = WebSettings.LOAD_DEFAULT
+                  }
 
-        # 6. MainActivity.java
-        cat << 'EOF' > app/src/main/java/com/avafix/logbook/MainActivity.java
-        package com.avafix.logbook;
+                  webView.webChromeClient = WebChromeClient()
+                  webView.webViewClient = WebViewClient()
+                  webView.loadUrl("file:///android_asset/index.html")
+              }
+          }
+          EOF
 
-        import android.app.Activity;
-        import android.os.Bundle;
-        import android.webkit.WebView;
-        import android.webkit.WebSettings;
+          cat << 'EOF' > app/src/main/assets/index.html
+          <!DOCTYPE html>
+          <html lang="fa" dir="rtl">
+          <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+              <title>AvaFix Logbook HUD</title>
+              <style>
+                  :root {
+                      --bg: #090D16;
+                      --panel: #131A2A;
+                      --panel-border: #1E293B;
+                      --ava-red: #E11D48;
+                      --hud-cyan: #06B6D4;
+                      --hud-green: #10B981;
+                      --text: #F8FAFC;
+                      --text-muted: #94A3B8;
+                  }
+                  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+                  body { background: var(--bg); color: var(--text); padding-bottom: 90px; }
+                  header { background: var(--panel); border-bottom: 2px solid var(--ava-red); padding: 16px; display: flex; justify-content: space-between; align-items: center; }
+                  .brand { font-size: 1.2rem; font-weight: 900; letter-spacing: 1px; color: var(--text); }
+                  .brand span { color: var(--ava-red); }
+                  .container { padding: 16px; max-width: 600px; margin: 0 auto; }
+                  .card { background: var(--panel); border: 1px solid var(--panel-border); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+                  .card-title { font-size: 0.95rem; color: var(--hud-cyan); font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; }
+                  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+                  label { font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 4px; }
+                  input, select { width: 100%; background: #0A0F1D; border: 1px solid var(--panel-border); color: #FFF; padding: 10px; border-radius: 8px; font-size: 0.85rem; outline: none; }
+                  input:focus, select:focus { border-color: var(--hud-cyan); }
+                  .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.9rem; }
+                  .btn-primary { background: linear-gradient(135deg, var(--ava-red), #BE123C); color: white; }
+                  .btn-secondary { background: #1E293B; color: var(--hud-cyan); border: 1px solid var(--hud-cyan); margin-top: 8px; }
+                  .leg-item { background: #0B1120; border: 1px solid var(--panel-border); padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; }
+                  .total-hud { display: flex; justify-content: space-around; background: #050811; padding: 12px; border-radius: 8px; border-top: 1px solid var(--hud-green); margin-top: 10px; }
+                  .hud-value { font-family: monospace; font-size: 1.1rem; color: var(--hud-green); font-weight: bold; }
+              </style>
+          </head>
+          <body>
+              <header>
+                  <div class="brand">AVA<span>FIX</span> LOGBOOK</div>
+                  <div style="font-size:0.75rem; color:var(--hud-cyan); border:1px solid var(--hud-cyan); padding:2px 8px; border-radius:4px;">COCKPIT v3.5</div>
+              </header>
 
-        public class MainActivity extends Activity {
-            @Override
-            protected void onCreate(Bundle savedInstanceState) {
-                super.onCreate(savedInstanceState);
-                WebView webView = new WebView(this);
-                WebSettings settings = webView.getSettings();
-                settings.setJavaScriptEnabled(true);
-                settings.setDomStorageEnabled(true);
-                settings.setDatabaseEnabled(true);
-                webView.loadUrl("file:///android_asset/index.html");
-                setContentView(webView);
-            }
-        }
-        EOF
+              <div class="container">
+                  <div class="card">
+                      <div class="card-title">ثبت دیوتی پروازی (Flight Duty)</div>
+                      <div class="form-row">
+                          <div>
+                              <label>تاریخ شمسی (روز/ماه/سال)</label>
+                              <input type="text" id="shamsiDate" placeholder="1403/07/08">
+                          </div>
+                          <div>
+                              <label>شماره پرواز (Flight No)</label>
+                              <input type="text" id="flightNo" placeholder="IR800">
+                          </div>
+                      </div>
+                      <div class="form-row">
+                          <div>
+                              <label>مسیر پروازی (Route)</label>
+                              <select id="routeSelect" onchange="autoFillFixedTime()">
+                                  <option value="">انتخاب مسیر...</option>
+                                  <option value="THR-MHD" data-time="01:15">THR - MHD (01:15)</option>
+                                  <option value="MHD-THR" data-time="01:15">MHD - THR (01:15)</option>
+                                  <option value="THR-SYZ" data-time="01:10">THR - SYZ (01:10)</option>
+                                  <option value="SYZ-THR" data-time="01:10">SYZ - THR (01:10)</option>
+                                  <option value="THR-IFN" data-time="00:50">THR - IFN (00:50)</option>
+                                  <option value="IFN-THR" data-time="00:50">IFN - THR (00:50)</option>
+                                  <option value="THR-KIH" data-time="01:40">THR - KIH (01:40)</option>
+                                  <option value="KIH-THR" data-time="01:40">KIH - THR (01:40)</option>
+                                  <option value="THR-BND" data-time="01:45">THR - BND (01:45)</option>
+                                  <option value="BND-THR" data-time="01:45">BND - THR (01:45)</option>
+                                  <option value="THR-TBZ" data-time="01:05">THR - TBZ (01:05)</option>
+                                  <option value="TBZ-THR" data-time="01:05">TBZ - THR (01:05)</option>
+                                  <option value="THR-AWZ" data-time="01:00">THR - AWZ (01:00)</option>
+                                  <option value="AWZ-THR" data-time="01:00">AWZ - THR (01:00)</option>
+                                  <option value="CUSTOM" data-time="00:00">مسیر سفارشی (Custom)</option>
+                              </select>
+                          </div>
+                          <div>
+                              <label>زمان بلاک (HH:MM)</label>
+                              <input type="text" id="legTime" placeholder="01:15">
+                          </div>
+                      </div>
+                      <button class="btn btn-secondary" onclick="addLeg()">+ افزودن این لگ به دیوتی</button>
+                      
+                      <div id="legsContainer" style="margin-top:12px;"></div>
+                      
+                      <div class="total-hud">
+                          <div style="text-align:center;">
+                              <div style="font-size:0.7rem; color:var(--text-muted);">مجموع لگ‌ها</div>
+                              <div class="hud-value" id="legsCount">0</div>
+                          </div>
+                          <div style="text-align:center;">
+                              <div style="font-size:0.7rem; color:var(--text-muted);">مجموع بلاک‌تایم</div>
+                              <div class="hud-value" id="totalBlock">00:00</div>
+                          </div>
+                      </div>
 
-        # 7. UI و لاجیک اپلیکیشن
-        cat << 'EOF' > app/src/main/assets/index.html
-        <!DOCTYPE html>
-        <html lang="fa" dir="rtl">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-            <title>AvaFix Crew Logbook</title>
-            <style>
-                :root {
-                    --bg-dark: #070A10;
-                    --card-bg: rgba(18, 24, 38, 0.85);
-                    --primary-red: #E11D48;
-                    --primary-red-glow: rgba(225, 29, 72, 0.25);
-                    --accent-cyan: #38BDF8;
-                    --hud-emerald: #00F5A0;
-                    --text-main: #F8FAFC;
-                    --text-sub: #94A3B8;
-                    --border-clr: rgba(255, 255, 255, 0.08);
-                    --border-active: rgba(56, 189, 248, 0.3);
-                }
-                * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-                body {
-                    margin: 0;
-                    padding: 0;
-                    background: radial-gradient(circle at 50% 0%, #131A2B 0%, var(--bg-dark) 75%);
-                    color: var(--text-main);
-                    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-                    direction: rtl;
-                    min-height: 100vh;
-                }
-                .header {
-                    background: rgba(10, 15, 26, 0.92);
-                    backdrop-filter: blur(12px);
-                    -webkit-backdrop-filter: blur(12px);
-                    padding: 14px 18px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    border-bottom: 1px solid var(--border-clr);
-                    position: sticky;
-                    top: 0;
-                    z-index: 100;
-                }
-                .brand { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 16px; letter-spacing: -0.2px; }
-                .brand-badge {
-                    background: linear-gradient(135deg, #F43F5E 0%, #BE123C 100%);
-                    color: white;
-                    padding: 3px 8px;
-                    border-radius: 6px;
-                    font-size: 11px;
-                    font-weight: 900;
-                    box-shadow: 0 0 10px var(--primary-red-glow);
-                }
-                .drawer-btn {
-                    background: rgba(30, 41, 59, 0.7);
-                    border: 1px solid var(--border-clr);
-                    color: #E2E8F0;
-                    padding: 7px 13px;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    font-size: 12px;
-                    font-weight: 600;
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    transition: all 0.2s;
-                }
-                .drawer-btn:active { background: #334155; transform: scale(0.97); }
-                .container { padding: 14px; max-width: 520px; margin: 0 auto; }
-                
-                .month-banner {
-                    background: linear-gradient(145deg, rgba(30, 20, 25, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
-                    border: 1px solid rgba(225, 29, 72, 0.2);
-                    border-radius: 14px;
-                    padding: 16px;
-                    margin-bottom: 14px;
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-                }
-                .month-banner-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-end;
-                }
-                .month-title { font-size: 12px; color: var(--text-sub); margin-bottom: 3px; font-weight: 600; }
-                .month-hours {
-                    font-size: 28px;
-                    font-weight: 900;
-                    color: var(--hud-emerald);
-                    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-                    text-shadow: 0 0 12px rgba(0, 245, 160, 0.35);
-                    letter-spacing: 1px;
-                    line-height: 1;
-                }
-                .month-hours span { font-size: 13px; color: #F43F5E; font-weight: normal; margin-right: 4px; font-family: system-ui; }
+                      <button class="btn btn-primary" style="margin-top:16px;" onclick="saveDuty()">ثبت نهایی دیوتی در لاگ‌بوک</button>
+                  </div>
 
-                .card {
-                    background: var(--card-bg);
-                    backdrop-filter: blur(16px);
-                    -webkit-backdrop-filter: blur(16px);
-                    border: 1px solid var(--border-clr);
-                    border-radius: 14px;
-                    padding: 16px;
-                    margin-bottom: 14px;
-                    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
-                }
-                .section-header {
-                    font-size: 14px;
-                    font-weight: 700;
-                    margin-bottom: 14px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    color: #F1F5F9;
-                }
-                .form-group { margin-bottom: 14px; }
-                label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 6px; font-weight: 600; }
-                select {
-                    width: 100%;
-                    background: #0F172A;
-                    border: 1px solid #334155;
-                    color: #F8FAFC;
-                    padding: 11px 12px;
-                    border-radius: 9px;
-                    font-size: 13px;
-                    outline: none;
-                    transition: border-color 0.2s, box-shadow 0.2s;
-                }
-                select:focus {
-                    border-color: var(--accent-cyan);
-                    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
-                }
-                .date-grid {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr 1fr;
-                    gap: 8px;
-                }
-                .gregorian-badge {
-                    margin-top: 8px;
-                    font-size: 11px;
-                    color: var(--accent-cyan);
-                    background: rgba(15, 23, 42, 0.8);
-                    padding: 6px 10px;
-                    border-radius: 7px;
-                    border: 1px solid rgba(56, 189, 248, 0.2);
-                    direction: ltr;
-                    text-align: right;
-                    font-family: ui-monospace, monospace;
-                }
+                  <div class="card">
+                      <div class="card-title">تاریخچه دیوتی‌های ثبت‌شده</div>
+                      <div id="dutiesList" style="font-size:0.85rem; color:var(--text-muted);">دیوتی ثبت‌شده‌ای وجود ندارد.</div>
+                  </div>
+              </div>
 
-                .btn-add-leg {
-                    width: 100%;
-                    background: rgba(30, 41, 59, 0.8);
-                    color: #F8FAFC;
-                    border: 1px dashed #475569;
-                    padding: 12px;
-                    border-radius: 9px;
-                    font-size: 13px;
-                    font-weight: 700;
-                    cursor: pointer;
-                    margin-top: 6px;
-                    transition: all 0.2s;
-                }
-                .btn-add-leg:active { background: #334155; transform: scale(0.98); }
+              <script>
+                  let currentLegs = [];
 
-                .legs-list { margin: 12px 0; }
-                .leg-row {
-                    background: rgba(15, 23, 42, 0.9);
-                    border: 1px solid #1E293B;
-                    border-radius: 9px;
-                    padding: 10px 12px;
-                    margin-bottom: 8px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    font-size: 13px;
-                    animation: fadeIn 0.2s ease-out;
-                }
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
-                .leg-badge {
-                    background: rgba(225, 29, 72, 0.18);
-                    color: #FB7185;
-                    padding: 3px 8px;
-                    border-radius: 5px;
-                    font-size: 12px;
-                    font-weight: 700;
-                    font-family: ui-monospace, monospace;
-                    border: 1px solid rgba(225, 29, 72, 0.3);
-                }
-                .btn-remove-leg {
-                    background: none;
-                    border: none;
-                    color: #F43F5E;
-                    cursor: pointer;
-                    font-size: 16px;
-                    padding: 4px 6px;
-                    line-height: 1;
-                    border-radius: 4px;
-                }
-                .btn-remove-leg:active { background: rgba(244, 63, 94, 0.2); }
+                  function autoFillFixedTime() {
+                      const sel = document.getElementById("routeSelect");
+                      const opt = sel.options[sel.selectedIndex];
+                      const fixedTime = opt.getAttribute("data-time");
+                      if (fixedTime && fixedTime !== "00:00") {
+                          document.getElementById("legTime").value = fixedTime;
+                      }
+                  }
 
-                .total-box {
-                    background: #0B111E;
-                    border-radius: 9px;
-                    padding: 13px 15px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin: 14px 0;
-                    border: 1px solid #1E293B;
-                }
-                .total-time-val {
-                    font-size: 20px;
-                    font-weight: 900;
-                    color: var(--hud-emerald);
-                    font-family: ui-monospace, monospace;
-                    text-shadow: 0 0 8px rgba(0, 245, 160, 0.3);
-                }
+                  function addLeg() {
+                      const sel = document.getElementById("routeSelect");
+                      const route = sel.value;
+                      const time = document.getElementById("legTime").value.trim();
+                      if (!route || !time) {
+                          alert("لطفاً مسیر و زمان بلاک را مشخص کنید.");
+                          return;
+                      }
+                      currentLegs.push({ route, time });
+                      renderLegs();
+                  }
 
-                button.btn-primary {
-                    width: 100%;
-                    background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%);
-                    color: white;
-                    border: none;
-                    padding: 13px;
-                    border-radius: 9px;
-                    font-size: 14px;
-                    font-weight: 700;
-                    cursor: pointer;
-                    box-shadow: 0 4px 14px var(--primary-red-glow);
-                    transition: all 0.2s;
-                }
-                button.btn-primary:active { transform: scale(0.98); }
-                button.btn-primary:disabled {
-                    background: #1E293B;
-                    color: #64748B;
-                    cursor: not-allowed;
-                    box-shadow: none;
-                }
+                  function renderLegs() {
+                      const container = document.getElementById("legsContainer");
+                      container.innerHTML = "";
+                      let totalMinutes = 0;
 
-                .drawer-overlay {
-                    position: fixed;
-                    top: 0; left: 0; right: 0; bottom: 0;
-                    background: rgba(0, 0, 0, 0.75);
-                    backdrop-filter: blur(4px);
-                    display: none;
-                    z-index: 200;
-                }
-                .drawer-content {
-                    position: fixed;
-                    top: 0; bottom: 0; right: -360px;
-                    width: 340px;
-                    max-width: 90vw;
-                    background: #0D131F;
-                    border-left: 1px solid var(--border-clr);
-                    z-index: 201;
-                    transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-                    display: flex;
-                    flex-direction: column;
-                    box-shadow: -10px 0 30px rgba(0,0,0,0.5);
-                }
-                .drawer-open .drawer-overlay { display: block; }
-                .drawer-open .drawer-content { right: 0; }
-                .drawer-header {
-                    padding: 16px;
-                    border-bottom: 1px solid var(--border-clr);
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    background: #111827;
-                }
-                .drawer-body {
-                    padding: 14px;
-                    overflow-y: auto;
-                    flex: 1;
-                }
-                .month-group-card {
-                    background: #131B2E;
-                    border: 1px solid #1E293B;
-                    border-radius: 10px;
-                    margin-bottom: 14px;
-                    overflow: hidden;
-                }
-                .month-group-header {
-                    background: #1A243B;
-                    padding: 10px 14px;
-                    font-size: 13px;
-                    font-weight: 700;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    border-bottom: 1px solid #24304D;
-                }
-                .archive-item {
-                    padding: 11px 13px;
-                    border-bottom: 1px solid #1E293B;
-                }
-                .archive-item:last-child { border-bottom: none; }
-                .archive-item-top {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 6px;
-                }
-                .archive-leg-detail {
-                    font-size: 11px;
-                    color: var(--text-sub);
-                    display: flex;
-                    justify-content: space-between;
-                    margin-top: 3px;
-                }
-                .btn-del {
-                    background: rgba(225, 29, 72, 0.2);
-                    border: 1px solid rgba(225, 29, 72, 0.4);
-                    color: #FB7185;
-                    padding: 3px 7px;
-                    border-radius: 5px;
-                    cursor: pointer;
-                    font-size: 11px;
-                    font-weight: 600;
-                }
-                .btn-del:active { background: #E11D48; color: white; }
-                .toast-notify {
-                    position: fixed;
-                    bottom: 24px;
-                    left: 50%;
-                    transform: translateX(-50%) translateY(100px);
-                    background: rgba(16, 185, 129, 0.95);
-                    color: white;
-                    padding: 10px 18px;
-                    border-radius: 20px;
-                    font-size: 13px;
-                    font-weight: 700;
-                    z-index: 300;
-                    opacity: 0;
-                    transition: all 0.3s ease;
-                    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-                }
-                .toast-notify.show {
-                    transform: translateX(-50%) translateY(0);
-                    opacity: 1;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="header">
-                <div class="brand">
-                    <span class="brand-badge">AVA</span>
-                    <span>AvaFix Logbook</span>
-                </div>
-                <button class="drawer-btn" onclick="toggleDrawer(true)">📂 سوابق ماهانه</button>
-            </div>
+                      currentLegs.forEach((leg, index) => {
+                          const [h, m] = leg.time.split(":").map(Number);
+                          totalMinutes += (h || 0) * 60 + (m || 0);
 
-            <div class="container">
-                <div class="month-banner">
-                    <div style="font-size:12px; color:var(--text-sub); margin-bottom:8px; font-weight:600;">انتخاب دوره جهت بررسی و محاسبه:</div>
-                    <div class="date-grid" style="margin-bottom: 12px;">
-                        <select id="reviewYear" onchange="onReviewFilterChange()"></select>
-                        <select id="reviewMonth" onchange="onReviewFilterChange()"></select>
-                    </div>
-                    <div class="month-banner-row">
-                        <div>
-                            <div class="month-title" id="reviewBannerTitle">مجموع ساعات این ماه:</div>
-                            <div style="font-size:11px; color:#64748B; font-family:ui-monospace, monospace;" id="reviewGregorianPeriod">--</div>
-                        </div>
-                        <div class="month-hours" id="monthlyTotalDisplay">00:00 <span>ساعت</span></div>
-                    </div>
-                </div>
+                          const div = document.createElement("div");
+                          div.className = "leg-item";
+                          div.innerHTML = `<span>#${index + 1} - ${leg.route}</span><span>${leg.time}</span>`;
+                          container.appendChild(div);
+                      });
 
-                <div class="card">
-                    <div class="section-header">
-                        <span>ثبت وظیفه پروازی (Duty)</span>
-                        <span id="legsCountBadge" style="font-size:11px; color:var(--accent-cyan); font-family:ui-monospace, monospace;">۰ لگ انتخاب‌شده</span>
-                    </div>
+                      document.getElementById("legsCount").innerText = currentLegs.length;
+                      const th = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
+                      const tm = String(totalMinutes % 60).padStart(2, "0");
+                      document.getElementById("totalBlock").innerText = `${th}:${tm}`;
+                  }
 
-                    <div class="form-group">
-                        <label>تاریخ پرواز (شمسی و میلادی):</label>
-                        <div class="date-grid">
-                            <select id="flightYear" onchange="updateFlightDatePreview()"></select>
-                            <select id="flightMonth" onchange="updateFlightDatePreview()"></select>
-                            <select id="flightDay" onchange="updateFlightDatePreview()"></select>
-                        </div>
-                        <div class="gregorian-badge" id="gregorianDateDisplay">Gregorian: --</div>
-                    </div>
+                  function saveDuty() {
+                      const date = document.getElementById("shamsiDate").value.trim();
+                      const flightNo = document.getElementById("flightNo").value.trim();
+                      if (!date || currentLegs.length === 0) {
+                          alert("حداقل یک لگ پروازی و تاریخ شمسی الزامی است.");
+                          return;
+                      }
 
-                    <div class="form-group">
-                        <label>انتخاب مسیر (FIXED TIME):</label>
-                        <select id="routeSelect">
-                            <option value="THR-MHD|105|01:45">THR ➔ MHD (تهران - مشهد) | ۰۱:۴۵</option>
-                            <option value="MHD-THR|115|01:55">MHD ➔ THR (مشهد - تهران) | ۰۱:۵۵</option>
-                            <option value="THR-GSM|145|02:25">THR ➔ GSM (تهران - قشم) | ۰۲:۲۵</option>
-                            <option value="GSM-THR|155|02:35">GSM ➔ THR (قشم - تهران) | ۰۲:۳۵</option>
-                            <option value="MHD-KSH|165|02:45">MHD ➔ KSH (مشهد - کرمانشاه) | ۰۲:۴۵</option>
-                            <option value="KSH-MHD|145|02:25">KSH ➔ MHD (کرمانشاه - مشهد) | ۰۲:۲۵</option>
-                            <option value="MHD-SYZ|155|02:35">MHD ➔ SYZ (مشهد - شیراز) | ۰۲:۳۵</option>
-                            <option value="SYZ-MHD|140|02:20">SYZ ➔ MHD (شیراز - مشهد) | ۰۲:۲۰</option>
-                            <option value="MHD-AWZ|185|03:05">MHD ➔ AWZ (مشهد - اهواز) | ۰۳:۰۵</option>
-                            <option value="AWZ-MHD|160|02:40">AWZ ➔ MHD (اهواز - مشهد) | ۰۲:۴۰</option>
-                            <option value="THR-KIH|145|02:25">THR ➔ KIH (تهران - کیش) | ۰۲:۲۵</option>
-                            <option value="KIH-THR|145|02:25">KIH ➔ THR (کیش - تهران) | ۰۲:۲۵</option>
-                            <option value="MHD-IFN|140|02:20">MHD ➔ IFN (مشهد - اصفهان) | ۰۲:۲۰</option>
-                            <option value="IFN-MHD|125|02:05">IFN ➔ MHD (اصفهان - مشهد) | ۰۲:۰۵</option>
-                            <option value="MHD-TBZ|180|03:00">MHD ➔ TBZ (مشهد - تبریز) | ۰۳:۰۰</option>
-                            <option value="TBZ-MHD|160|02:40">TBZ ➔ MHD (تبریز - مشهد) | ۰۲:۴۰</option>
-                            <option value="THR-OMH|100|01:40">THR ➔ OMH (تهران - ارومیه) | ۰۱:۴۰</option>
-                            <option value="OMH-MHD|155|02:35">OMH ➔ MHD (ارومیه - مشهد) | ۰۲:۳۵</option>
-                            <option value="MHD-OMH|185|03:05">MHD ➔ OMH (مشهد - ارومیه) | ۰۳:۰۵</option>
-                            <option value="OMH-THR|95|01:35">OMH ➔ THR (ارومیه - تهران) | ۰۱:۳۵</option>
-                            <option value="THR-ADU|80|01:20">THR ➔ ADU (تهران - اردبیل) | ۰۱:۲۰</option>
-                            <option value="ADU-MHD|145|02:25">ADU ➔ MHD (اردبیل - مشهد) | ۰۲:۲۵</option>
-                            <option value="MHD-ADU|160|02:40">MHD ➔ ADU (مشهد - اردبیل) | ۰۲:۴۰</option>
-                            <option value="ADU-THR|75|01:15">ADU ➔ THR (اردبیل - تهران) | ۰۱:۱۵</option>
-                            <option value="THR-BND|140|02:20">THR ➔ BND (تهران - بندرعباس) | ۰۲:۲۰</option>
-                            <option value="BND-THR|155|02:35">BND ➔ THR (بندرعباس - تهران) | ۰۲:۳۵</option>
-                            <option value="MHD-RAM-MHD|250|04:10">MHD ⇄ RAM (مشهد - رامسر - مشهد | رفت و برگشت) | ۰۴:۱۰</option>
-                            <option value="MHD-BGW-MHD|375|06:15">MHD ⇄ BGW (مشهد - بغداد - مشهد | رفت و برگشت) | ۰۶:۱۵</option>
-                        </select>
-                    </div>
+                      const dutyRecord = {
+                          date,
+                          flightNo,
+                          legs: [...currentLegs],
+                          totalTime: document.getElementById("totalBlock").innerText,
+                          timestamp: Date.now()
+                      };
 
-                    <button class="btn-add-leg" onclick="addLeg()">➕ افزودن این لگ به برنامه</button>
+                      const duties = JSON.parse(localStorage.getItem("avafix_duties") || "[]");
+                      duties.unshift(dutyRecord);
+                      localStorage.setItem("avafix_duties", JSON.stringify(duties));
 
-                    <div class="legs-list" id="currentLegsList"></div>
+                      currentLegs = [];
+                      document.getElementById("shamsiDate").value = "";
+                      document.getElementById("flightNo").value = "";
+                      renderLegs();
+                      renderHistory();
+                      alert("دیوتی پروازی با موفقیت ذخیره شد.");
+                  }
 
-                    <div class="total-box">
-                        <span style="font-size:13px; color:var(--text-sub);">مجموع ساعات این وظیفه:</span>
-                        <span class="total-time-val" id="currentFlightTotal">00:00</span>
-                    </div>
+                  function renderHistory() {
+                      const duties = JSON.parse(localStorage.getItem("avafix_duties") || "[]");
+                      const list = document.getElementById("dutiesList");
+                      if (duties.length === 0) {
+                          list.innerHTML = "دیوتی ثبت‌شده‌ای وجود ندارد.";
+                          return;
+                      }
+                      list.innerHTML = duties.map(d => `
+                          <div style="background:#0B1120; border:1px solid #1E293B; border-radius:6px; padding:8px; margin-bottom:8px;">
+                              <div style="display:flex; justify-content:space-between; color:#FFF; font-weight:bold;">
+                                  <span>${d.date} (${d.flightNo || 'N/A'})</span>
+                                  <span style="color:var(--hud-green); font-family:monospace;">${d.totalTime}</span>
+                              </div>
+                              <div style="font-size:0.75rem; color:#94A3B8; margin-top:4px;">تعداد لگ‌ها: ${d.legs.length}</div>
+                          </div>
+                      `).join("");
+                  }
 
-                    <button class="btn-primary" id="saveDutyBtn" onclick="saveFlightDuty()" disabled>
-                        💾 ذخیره در سوابق ماهانه
-                    </button>
-                </div>
-            </div>
+                  renderHistory();
+              </script>
+          </body>
+          </html>
+          EOF
 
-            <div id="drawerRoot">
-                <div class="drawer-overlay" onclick="toggleDrawer(false)"></div>
-                <div class="drawer-content">
-                    <div class="drawer-header">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:16px;">📂</span>
-                            <h4 style="margin:0; font-size:15px; font-weight:700;">سوابق پروازی تفکیک‌شده</h4>
-                        </div>
-                        <span style="cursor:pointer; font-size:20px; color:#94A3B8; padding:4px;" onclick="toggleDrawer(false)">✕</span>
-                    </div>
-                    <div class="drawer-body" id="archiveList"></div>
-                </div>
-            </div>
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
-            <div class="toast-notify" id="toastBox">وظیفه پروازی ذخیره شد ✓</div>
+      - name: Build APK (Assemble Release)
+        run: gradle assembleRelease --no-daemon --stacktrace
 
-            <script>
-                const PERSIAN_MONTHS = [
-                    "فروردین", "اردیبهشت", "خرداد",
-                    "تیر", "مرداد", "شهریور",
-                    "مهر", "آبان", "آذر",
-                    "دی", "بهمن", "اسفند"
-                ];
+      - name: Verify APK Artifact
+        run: |
+          mkdir -p output_dist
+          APK_FILE=$(find app/build/outputs/apk/release -name "*.apk" -type f | head -n 1)
+          if [ -z "$APK_FILE" ]; then
+            echo "::error::No release APK was found in the build directory!"
+            exit 1
+          fi
+          echo "Found APK: $APK_FILE"
+          cp "$APK_FILE" output_dist/AvaFix-Cockpit-v3.5.apk
+          ls -lh output_dist/
 
-                const G_MONTH_NAMES = [
-                    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                ];
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AvaFix-Release-v3.5
+          path: output_dist/AvaFix-Cockpit-v3.5.apk
+          if-no-files-found: error
 
-                function jalaliToGregorian(jy, jm, jd) {
-                    var sal_a, gy, gm, gd, days;
-                    jy += 1595;
-                    days = -355668 + (365 * jy) + Math.floor(jy / 33) * 8 + Math.floor(((jy % 33) + 3) / 4) + jd + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
-                    gy = 400 * Math.floor(days / 146097);
-                    days %= 146097;
-                    if (days > 36524) {
-                        gy += 100 * Math.floor(--days / 36524);
-                        days %= 36524;
-                        if (days >= 365) days++;
-                    }
-                    gy += 4 * Math.floor(days / 1461);
-                    days %= 1461;
-                    if (days > 365) {
-                        gy += Math.floor((days - 1) / 365);
-                        days = (days - 1) % 365;
-                    }
-                    gd = days + 1;
-                    var sal_m = [0, 31, ((gy % 4 === 0 && gy % 
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/heads/')
+        with:
+          tag_name: v3.5-b${{ github.run_number }}
+          name: AvaFix Cockpit HUD Edition v3.5 (Build ${{ github.run_number }})
+          body: |
+            ### AvaFix Logbook v3.5 (Cockpit HUD Edition)
+            - Fixed-time Legs & Multi-leg Duty support
+            - Native Glassmorphism Cockpit UI
+            - Validated automated pipeline build
+          files: output_dist/AvaFix-Cockpit-v3.5.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
