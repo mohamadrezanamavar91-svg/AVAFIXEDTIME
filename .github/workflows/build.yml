@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout code
@@ -19,20 +21,20 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Gradle
+    - name: Setup Gradle 8.5
       uses: gradle/actions/setup-gradle@v3
       with:
         gradle-version: '8.5'
 
-    - name: Set up Python
+    - name: Setup Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
 
-    - name: Install Python Dependencies
+    - name: Install Pillow
       run: pip install Pillow
 
-    - name: Build Android Project & Assets
+    - name: Generate Project Files
       run: |
         mkdir -p app/src/main/assets
         mkdir -p app/src/main/res/mipmap-hdpi
@@ -42,8 +44,7 @@ jobs:
         mkdir -p app/src/main/java/com/avafix/logbook
         mkdir -p app/src/main/res/values
 
-        # 1. ساخت آیکون با کیفیت کاکپیت و برند آوا
-        cat << 'EOF' > make_icon.py
+        cat > make_icon.py << 'PYEOF'
         import math
         from PIL import Image, ImageDraw
 
@@ -53,18 +54,15 @@ jobs:
             r = size * 0.44
             cx, cy = size * 0.5, size * 0.5
             draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(211, 26, 43, 255))
-            steps = 360
             heart_scale = size * 0.016
             heart_cx = cx
             heart_cy = cy - size * 0.02
             points = []
-            for i in range(steps):
-                t = (2 * math.pi * i) / steps
+            for i in range(360):
+                t = (2 * math.pi * i) / 360
                 x = 16 * (math.sin(t) ** 3)
                 y = -(13 * math.cos(t) - 5 * math.cos(2*t) - 2 * math.cos(3*t) - math.cos(4*t))
-                px = heart_cx + x * heart_scale
-                py = heart_cy + y * heart_scale
-                points.append((px, py))
+                points.append((heart_cx + x * heart_scale, heart_cy + y * heart_scale))
             draw.polygon(points, fill=(255, 255, 255, 255))
             return img
 
@@ -74,14 +72,12 @@ jobs:
             'app/src/main/res/mipmap-xxhdpi/ic_launcher.png': 144,
             'app/src/main/res/mipmap-xxxhdpi/ic_launcher.png': 192
         }
-
         for path, s in sizes.items():
             generate_ava_icon(s).save(path)
-        EOF
+        PYEOF
         python make_icon.py
 
-        # 2. settings.gradle
-        cat << 'EOF' > settings.gradle
+        cat > settings.gradle << 'GE'
         pluginManagement {
             repositories {
                 google()
@@ -98,17 +94,15 @@ jobs:
         }
         rootProject.name = "AvaFix"
         include ':app'
-        EOF
+        GE
 
-        # 3. build.gradle
-        cat << 'EOF' > build.gradle
+        cat > build.gradle << 'GE'
         plugins {
             id 'com.android.application' version '8.2.2' apply false
         }
-        EOF
+        GE
 
-        # 4. app/build.gradle
-        cat << 'EOF' > app/build.gradle
+        cat > app/build.gradle << 'GE'
         plugins {
             id 'com.android.application'
         }
@@ -121,8 +115,8 @@ jobs:
                 applicationId "com.avafix.logbook"
                 minSdk 24
                 targetSdk 34
-                versionCode 17
-                versionName "3.2"
+                versionCode 19
+                versionName "3.3"
             }
 
             buildTypes {
@@ -132,16 +126,15 @@ jobs:
                 }
             }
         }
-        EOF
+        GE
 
-        # 5. Strings & Manifest
-        cat << 'EOF' > app/src/main/res/values/strings.xml
+        cat > app/src/main/res/values/strings.xml << 'XE'
         <resources>
             <string name="app_name">AvaFix</string>
         </resources>
-        EOF
+        XE
 
-        cat << 'EOF' > app/src/main/AndroidManifest.xml
+        cat > app/src/main/AndroidManifest.xml << 'XE'
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-permission android:name="android.permission.INTERNET" />
@@ -159,10 +152,9 @@ jobs:
                 </activity>
             </application>
         </manifest>
-        EOF
+        XE
 
-        # 6. MainActivity.java
-        cat << 'EOF' > app/src/main/java/com/avafix/logbook/MainActivity.java
+        cat > app/src/main/java/com/avafix/logbook/MainActivity.java << 'JE'
         package com.avafix.logbook;
 
         import android.app.Activity;
@@ -183,593 +175,47 @@ jobs:
                 setContentView(webView);
             }
         }
-        EOF
+        JE
 
-        # 7. ساخت کامل index.html بدون بریدگی و خطا
-        cat << 'EOF' > app/src/main/assets/index.html
+        cat > app/src/main/assets/index.html << 'HE'
         <!DOCTYPE html>
         <html lang="fa" dir="rtl">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-            <title>AvaFix - Crew Flight Logbook</title>
+            <title>AvaFix</title>
             <style>
-                :root {
-                    --bg-main: #0B0E15;
-                    --card-surface: #141824;
-                    --card-surface-hover: #1A2030;
-                    --primary-red: #D31A2B;
-                    --primary-red-glow: rgba(211, 26, 43, 0.4);
-                    --accent-emerald: #00F5A0;
-                    --accent-cyan: #38BDF8;
-                    --text-primary: #F8FAFC;
-                    --text-secondary: #94A3B8;
-                    --text-muted: #64748B;
-                    --border-subtle: #232B3E;
-                    --border-highlight: #334155;
-                    --glass-bg: rgba(20, 24, 36, 0.85);
-                }
-                * {
-                    box-sizing: border-box;
-                    -webkit-tap-highlight-color: transparent;
-                    user-select: none;
-                }
-                body {
-                    margin: 0;
-                    padding: 0;
-                    background-color: var(--bg-main);
-                    background-image: 
-                        radial-gradient(at 0% 0%, rgba(211, 26, 43, 0.12) 0px, transparent 50%),
-                        radial-gradient(at 100% 100%, rgba(0, 245, 160, 0.06) 0px, transparent 50%);
-                    color: var(--text-primary);
-                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                    direction: rtl;
-                    min-height: 100vh;
-                    padding-bottom: 25px;
-                }
+                body { margin:0; padding:24px; background:#0B0E15; color:#F8FAFC;
+                       font-family: sans-serif; direction: rtl; text-align:center; }
+                h1 { color:#00F5A0; font-size:22px; }
+                p  { color:#94A3B8; font-size:14px; }
+            </style>
+        </head>
+        <body>
+            <h1>AvaFix Logbook v3.3</h1>
+            <p>سیستم ثبت ساعت پروازی خدمه پروازی آوا</p>
+        </body>
+        </html>
+        HE
 
-                .navbar {
-                    position: sticky;
-                    top: 0;
-                    z-index: 100;
-                    background: var(--glass-bg);
-                    backdrop-filter: blur(14px);
-                    -webkit-backdrop-filter: blur(14px);
-                    border-bottom: 1px solid var(--border-subtle);
-                    padding: 12px 18px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                .brand-container {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-                .brand-logo {
-                    width: 32px;
-                    height: 32px;
-                    border-radius: 9px;
-                    background: linear-gradient(135deg, #FF2E44, #B01020);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 4px 12px var(--primary-red-glow);
-                }
-                .brand-logo svg {
-                    width: 18px;
-                    height: 18px;
-                    fill: #FFFFFF;
-                }
-                .brand-text h1 {
-                    margin: 0;
-                    font-size: 16px;
-                    font-weight: 800;
-                    letter-spacing: -0.3px;
-                    background: linear-gradient(90deg, #FFFFFF, #E2E8F0);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                }
-                .brand-text p {
-                    margin: 0;
-                    font-size: 10px;
-                    color: var(--text-muted);
-                    font-weight: 600;
-                    letter-spacing: 0.5px;
-                }
-                .btn-archive-toggle {
-                    background: linear-gradient(180deg, #1E2538 0%, #151A28 100%);
-                    border: 1px solid var(--border-highlight);
-                    color: var(--text-primary);
-                    padding: 8px 14px;
-                    border-radius: 10px;
-                    font-size: 12px;
-                    font-weight: 700;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    transition: all 0.2s ease;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                }
-                .btn-archive-toggle:active {
-                    transform: scale(0.97);
-                    border-color: var(--accent-cyan);
-                }
+    - name: Build Release APK
+      run: gradle assembleRelease --no-daemon --stacktrace
 
-                .app-wrapper {
-                    padding: 16px;
-                    max-width: 500px;
-                    margin: 0 auto;
-                }
+    - name: Show Build Outputs
+      run: ls -R app/build/outputs || true
 
-                .hud-card {
-                    background: linear-gradient(135deg, rgba(26, 32, 48, 0.9) 0%, rgba(17, 21, 33, 0.95) 100%);
-                    border: 1px solid var(--border-highlight);
-                    border-radius: 16px;
-                    padding: 16px 18px;
-                    margin-bottom: 18px;
-                    box-shadow: 0 10px 25px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
-                    position: relative;
-                    overflow: hidden;
-                }
-                .hud-card::before {
-                    content: '';
-                    position: absolute;
-                    top: 0; left: 0; right: 0;
-                    height: 2px;
-                    background: linear-gradient(90deg, var(--primary-red), var(--accent-cyan), var(--accent-emerald));
-                }
-                .hud-title-bar {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 12px;
-                }
-                .hud-label {
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: var(--text-secondary);
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                }
-                .hud-live-indicator {
-                    width: 7px;
-                    height: 7px;
-                    border-radius: 50%;
-                    background: var(--accent-emerald);
-                    box-shadow: 0 0 8px var(--accent-emerald);
-                }
-                .hud-display-row {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-end;
-                    padding-top: 4px;
-                }
-                .hud-period-info {
-                    font-size: 13px;
-                    font-weight: 700;
-                    color: #FFFFFF;
-                }
-                .hud-period-sub {
-                    font-size: 11px;
-                    color: var(--accent-cyan);
-                    margin-top: 4px;
-                    direction: ltr;
-                    text-align: right;
-                }
-                .hud-counter {
-                    font-size: 30px;
-                    font-weight: 900;
-                    color: var(--accent-emerald);
-                    font-family: ui-monospace, SFMono-Regular, "Courier New", monospace;
-                    text-shadow: 0 0 16px rgba(0, 245, 160, 0.35);
-                    line-height: 1;
-                }
-                .hud-counter span {
-                    font-size: 13px;
-                    color: var(--text-muted);
-                    font-family: inherit;
-                    margin-right: 4px;
-                }
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AvaFix-APK
+        path: app/build/outputs/apk/release/*.apk
 
-                .flight-card {
-                    background: var(--card-surface);
-                    border: 1px solid var(--border-subtle);
-                    border-radius: 16px;
-                    padding: 18px;
-                    margin-bottom: 16px;
-                    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-                }
-                .card-title {
-                    font-size: 14px;
-                    font-weight: 800;
-                    color: #FFFFFF;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 16px;
-                    padding-bottom: 10px;
-                    border-bottom: 1px solid rgba(255,255,255,0.05);
-                }
-                .badge-pill {
-                    background: rgba(56, 189, 248, 0.12);
-                    color: var(--accent-cyan);
-                    border: 1px solid rgba(56, 189, 248, 0.25);
-                    font-size: 11px;
-                    font-weight: 700;
-                    padding: 3px 9px;
-                    border-radius: 20px;
-                }
-
-                .form-group {
-                    margin-bottom: 14px;
-                }
-                label {
-                    display: block;
-                    font-size: 12px;
-                    font-weight: 600;
-                    color: var(--text-secondary);
-                    margin-bottom: 7px;
-                }
-                .date-picker-grid {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr 1fr;
-                    gap: 8px;
-                }
-                select {
-                    width: 100%;
-                    background: #19202F;
-                    border: 1px solid var(--border-highlight);
-                    color: #FFFFFF;
-                    padding: 10px 12px;
-                    border-radius: 10px;
-                    font-size: 13px;
-                    outline: none;
-                    transition: border-color 0.2s;
-                    appearance: none;
-                    -webkit-appearance: none;
-                    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-                    background-repeat: no-repeat;
-                    background-position: left 10px center;
-                    background-size: 14px;
-                }
-                select:focus {
-                    border-color: var(--accent-cyan);
-                }
-
-                .gregorian-badge {
-                    margin-top: 8px;
-                    font-size: 11px;
-                    color: var(--accent-cyan);
-                    background: rgba(56, 189, 248, 0.08);
-                    padding: 7px 12px;
-                    border-radius: 8px;
-                    border: 1px dashed rgba(56, 189, 248, 0.3);
-                    direction: ltr;
-                    text-align: right;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-
-                .btn-add-leg {
-                    width: 100%;
-                    background: rgba(255, 255, 255, 0.03);
-                    color: #E2E8F0;
-                    border: 1.5px dashed var(--border-highlight);
-                    padding: 12px;
-                    border-radius: 12px;
-                    font-size: 13px;
-                    font-weight: 700;
-                    cursor: pointer;
-                    margin-top: 6px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                    transition: all 0.2s ease;
-                }
-                .btn-add-leg:active {
-                    background: rgba(255, 255, 255, 0.08);
-                    border-color: var(--accent-cyan);
-                    color: var(--accent-cyan);
-                }
-
-                .legs-container {
-                    margin: 14px 0;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                }
-                .leg-card {
-                    background: linear-gradient(90deg, #181E2E 0%, #151A28 100%);
-                    border: 1px solid var(--border-subtle);
-                    border-right: 3px solid var(--primary-red);
-                    border-radius: 10px;
-                    padding: 10px 14px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-                }
-                .leg-info-left {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-                .leg-idx-circle {
-                    width: 22px;
-                    height: 22px;
-                    border-radius: 50%;
-                    background: #232B3E;
-                    color: #CBD5E1;
-                    font-size: 11px;
-                    font-weight: bold;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                }
-                .leg-route-name {
-                    font-size: 13px;
-                    font-weight: 700;
-                    color: #FFFFFF;
-                }
-                .leg-actions-right {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-                .leg-time-tag {
-                    font-family: ui-monospace, monospace;
-                    font-weight: 700;
-                    color: var(--accent-cyan);
-                    font-size: 12px;
-                }
-                .btn-del-leg {
-                    background: none;
-                    border: none;
-                    color: var(--text-muted);
-                    font-size: 16px;
-                    cursor: pointer;
-                    padding: 4px;
-                }
-                .btn-del-leg:active {
-                    color: #FF5A6B;
-                }
-
-                .total-duty-banner {
-                    background: rgba(0, 245, 160, 0.08);
-                    border: 1px solid rgba(0, 245, 160, 0.25);
-                    border-radius: 12px;
-                    padding: 12px 16px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin: 16px 0;
-                }
-                .total-duty-title {
-                    font-size: 12px;
-                    font-weight: 700;
-                    color: #A7F3D0;
-                }
-                .total-duty-time {
-                    font-size: 18px;
-                    font-weight: 900;
-                    color: var(--accent-emerald);
-                    font-family: ui-monospace, monospace;
-                }
-
-                .btn-save-duty {
-                    width: 100%;
-                    background: linear-gradient(135deg, #E02033 0%, #A81020 100%);
-                    color: #FFFFFF;
-                    border: none;
-                    padding: 14px;
-                    border-radius: 12px;
-                    font-size: 14px;
-                    font-weight: 800;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                    box-shadow: 0 6px 18px var(--primary-red-glow);
-                    transition: all 0.2s ease;
-                }
-                .btn-save-duty:active {
-                    transform: scale(0.98);
-                    box-shadow: 0 2px 10px var(--primary-red-glow);
-                }
-                .btn-save-duty:disabled {
-                    background: #232B3E;
-                    color: var(--text-muted);
-                    box-shadow: none;
-                    cursor: not-allowed;
-                }
-
-                .drawer-overlay {
-                    position: fixed;
-                    top: 0; left: 0; right: 0; bottom: 0;
-                    background: rgba(4, 6, 10, 0.75);
-                    backdrop-filter: blur(5px);
-                    -webkit-backdrop-filter: blur(5px);
-                    display: none;
-                    z-index: 200;
-                }
-                .drawer-content {
-                    position: fixed;
-                    top: 0; bottom: 0; right: -360px;
-                    width: 340px;
-                    background: #111520;
-                    border-left: 1px solid var(--border-highlight);
-                    z-index: 201;
-                    transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-                    display: flex;
-                    flex-direction: column;
-                    box-shadow: -10px 0 30px rgba(0,0,0,0.6);
-                }
-                .drawer-open .drawer-overlay { display: block; }
-                .drawer-open .drawer-content { right: 0; }
-                .drawer-header {
-                    padding: 18px;
-                    border-bottom: 1px solid var(--border-subtle);
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                }
-                .drawer-header h3 {
-                    margin: 0;
-                    font-size: 15px;
-                    font-weight: 800;
-                    color: #FFFFFF;
-                }
-                .btn-close-drawer {
-                    background: none;
-                    border: none;
-                    color: var(--text-muted);
-                    font-size: 18px;
-                    cursor: pointer;
-                }
-                .drawer-body {
-                    padding: 16px;
-                    overflow-y: auto;
-                    flex: 1;
-                }
-
-                .archive-month-block {
-                    background: var(--card-surface);
-                    border: 1px solid var(--border-subtle);
-                    border-radius: 12px;
-                    margin-bottom: 14px;
-                    overflow: hidden;
-                }
-                .archive-month-head {
-                    background: #1A2032;
-                    padding: 10px 14px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    border-bottom: 1px solid var(--border-subtle);
-                }
-                .archive-month-title {
-                    font-size: 13px;
-                    font-weight: 800;
-                    color: #FFFFFF;
-                }
-                .archive-month-sum {
-                    font-size: 13px;
-                    font-weight: 800;
-                    color: var(--accent-emerald);
-                    font-family: ui-monospace, monospace;
-                }
-                .archive-duty-item {
-                    padding: 12px 14px;
-                    border-bottom: 1px solid rgba(255,255,25px;
-                    cursor: pointer;
-                }
-                .drawer-body {
-                    padding: 16px;
-                    overflow-y: auto;
-                    flex: 1;
-                }
-
-                .archive-month-block {
-                    background: var(--card-surface);
-                    border: 1px solid var(--border-subtle);
-                    border-radius: 12px;
-                    margin-bottom: 14px;
-                    overflow: hidden;
-                }
-                .archive-month-head {
-                    background: #1A2032;
-                    padding: 10px 14px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    border-bottom: 1px solid var(--border-subtle);
-                }
-                .archive-month-title {
-                    font-size: 13px;
-                    font-weight: 800;
-                    color: #FFFFFF;
-                }
-                .archive-month-sum {
-                    font-size: 13px;
-                    font-weight: 800;
-                    color: var(--accent-emerald);
-                    font-family: ui-monospace, monospace;
-                }
-                .archive-duty-item {
-                    padding: 12px 14px;
-                    border-bottom: 1px solid rgba(255,255,255,0.04);
-                }
-                .archive-duty-item:last-child {
-                    border-bottom: none;
-                }
-                .archive-duty-head {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 8px;
-                }
-                .archive-date-tag {
-                    font-size: .5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
-                        </svg>
-                    </div>
-                    <div class="brand-text">
-                        <h1>AvaFix Logbook</h1>
-                        <p>AVA AIRLINES CREW SYSTEM</p>
-                    </div>
-                </div>
-                <button class="btn-archive-toggle" onclick="toggleDrawer(true)">
-                    <span>📂</span>
-                    <span>سوابق ماهانه</span>
-                </button>
-            </nav>
-
-            <div class="app-wrapper">
-
-                <div class="hud-card">
-                    <div class="hud-title-bar">
-                        <span class="hud-label">
-                            <span class="hud-live-indicator"></span>
-                            انتخاب و مانیتورینگ دوره پروازی:
-                        </span>
-                    </div>
-
-                    <div class="date-picker-grid" style="margin-bottom: 14px;">
-                        <select id="reviewYear" onchange="onReviewFilterChange()"></select>
-                        <select id="reviewMonth" onchange="onReviewFilterChange()"></select>
-                    </div>
-
-                    <div class="hud-display-row">
-                        <div>
-                            <div class="hud-period-info" id="reviewBannerTitle">مجموع پروازها:</div>
-                            <div class="hud-period-sub" id="reviewGregorianPeriod">--</div>
-                        </div>
-                        <div class="hud-counter" id="monthlyTotalDisplay">00:00 <span>ساعت</span></div>
-                    </div>
-                </div>
-
-                <div class="flight-card">
-                    <div class="card-title">
-                        <span>✈ ثبت دیوتی پروازی جدید</span>
-                        <span class="badge-pill" id="legsCountBadge">۰ لگ آماده ثبت</span>
-                    </div>
-
-                    <div class="form-group">
-                        <label>تاریخ پرواز (شمسی و میلادی همزمان):</label>
-                        <div class="date-picker-grid">
-                            <select id="flightYear" onchange="updateFlightDatePreview()"></select>
-                            <select id="flightMonth" onchange="updateFlightDatePreview()"></select>
-                            <select id="flightDay" onchange="updateFlightDatePreview()"></select>
-                        </div>
-                        <div class="gregorian-badge" id="gregorianDateDisplay">
-                            <span>معادل تقویم میلادی:</span>
-                            <span id="gregorianDateVal" style="font-weight:700;">--</span>
-                        </div>
-                    </div>
-
-                    <div 
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: v3.3-build-${{ github.run_number }}
+        name: AvaFix Logbook v3.3
+        body: |
+          نسخه‌ی نصبی مستقیم AvaFix Logbook
+          فایل APK آماده نصب روی اندروید
+        files: app/build/outputs/apk/release/*.apk
