@@ -6,33 +6,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    container:
+      image: mobiledevops/android-sdk-image:34.0.0
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-
-    - name: Set up Java 17
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
-
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-
-    - name: Generate Android Project Structure
+    - name: Generate Source Code and Build APK
       run: |
         mkdir -p app/src/main/java/com/avacrew/avafix
         mkdir -p app/src/main/res/values
 
-        # 1. Strings
         cat << 'EOF' > app/src/main/res/values/strings.xml
         <resources>
             <string name="app_name">AvaFix</string>
         </resources>
         EOF
 
-        # 2. Android Manifest
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -40,8 +28,7 @@ jobs:
                 android:allowBackup="true"
                 android:icon="@android:drawable/sym_def_app_icon"
                 android:label="@string/app_name"
-                android:supportsRtl="true"
-                android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
+                android:supportsRtl="true">
                 <activity
                     android:name=".MainActivity"
                     android:exported="true">
@@ -54,30 +41,29 @@ jobs:
         </manifest>
         EOF
 
-        # 3. MainActivity Java Source
         cat << 'EOF' > app/src/main/java/com/avacrew/avafix/MainActivity.java
         package com.avacrew.avafix;
 
+        import android.app.Activity;
         import android.os.Bundle;
         import android.widget.LinearLayout;
         import android.widget.TextView;
-        import androidx.appcompat.app.AppCompatActivity;
 
-        public class MainActivity extends AppCompatActivity {
+        public class MainActivity extends Activity {
             @Override
             protected void onCreate(Bundle savedInstanceState) {
                 super.onCreate(savedInstanceState);
                 LinearLayout layout = new LinearLayout(this);
                 layout.setOrientation(LinearLayout.VERTICAL);
-                layout.setPadding(50, 80, 50, 50);
+                layout.setPadding(60, 100, 60, 60);
 
                 TextView title = new TextView(this);
                 title.setText("AvaFix - Crew Logbook");
-                title.setTextSize(22);
+                title.setTextSize(24);
                 layout.addView(title);
 
                 TextView info = new TextView(this);
-                info.setText("\nFixed Times:\n• MHD-RAS-MHD (R/T): 250 mins\n• MHD-BGW-MHD (R/T): 375 mins\n\nApp successfully installed!");
+                info.setText("\nFixed Times:\n• MHD-RAS-MHD (R/T): 250 mins\n• MHD-BGW-MHD (R/T): 375 mins\n\nStatus: Ready");
                 info.setTextSize(16);
                 layout.addView(info);
 
@@ -86,38 +72,31 @@ jobs:
         }
         EOF
 
-        # 4. Root settings.gradle
         cat << 'EOF' > settings.gradle
-        pluginManagement {
-            repositories {
-                google()
-                mavenCentral()
-                gradlePluginPortal()
-            }
-        }
-        dependencyResolutionManagement {
-            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-            repositories {
-                google()
-                mavenCentral()
-            }
-        }
         rootProject.name = "AvaFix"
         include ':app'
         EOF
 
-        # 5. Root build.gradle
         cat << 'EOF' > build.gradle
-        plugins {
-            id 'com.android.application' version '8.2.2' apply false
+        buildscript {
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.1.4'
+            }
+        }
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
         }
         EOF
 
-        # 6. App build.gradle
         cat << 'EOF' > app/build.gradle
-        plugins {
-            id 'com.android.application'
-        }
+        apply plugin: 'com.android.application'
 
         android {
             namespace 'com.avacrew.avafix'
@@ -130,32 +109,16 @@ jobs:
                 versionCode 1
                 versionName "1.0"
             }
-
             buildTypes {
                 release {
                     minifyEnabled false
                 }
             }
-            compileOptions {
-                sourceCompatibility JavaVersion.VERSION_17
-                targetCompatibility JavaVersion.VERSION_17
-            }
-        }
-
-        dependencies {
-            implementation 'androidx.appcompat:appcompat:1.6.1'
         }
         EOF
 
-    - name: Download Gradle Wrapper
-      run: |
-        curl -s -L -o gradle-8.5-bin.zip https://services.gradle.org/distributions/gradle-8.5-bin.zip
-        unzip -q gradle-8.5-bin.zip
-        ./gradle-8.5/bin/gradle wrapper --gradle-version 8.5
-        chmod +x gradlew
-
-    - name: Build APK with Gradle Wrapper
-      run: ./gradlew assembleDebug --no-daemon
+        gradle wrapper --gradle-version 8.4
+        ./gradlew assembleDebug --no-daemon
 
     - name: Upload Debug APK
       uses: actions/upload-artifact@v4
