@@ -7,7 +7,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
     - name: Set up JDK 17
@@ -16,7 +16,7 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android Project with Drawer & Monthly Engine
+    - name: Setup Android Project
       run: |
         mkdir -p app/src/main/java/com/avafix/logbook
         mkdir -p app/src/main/res/layout
@@ -47,11 +47,14 @@ jobs:
                 applicationId "com.avafix.logbook"
                 minSdk 24
                 targetSdk 34
-                versionCode 6
+                versionCode 7
                 versionName "2.4"
             }
             buildTypes {
-                release { minifyEnabled false }
+                release {
+                    minifyEnabled false
+                    signingConfig signingConfigs.debug
+                }
             }
         }
         EOF
@@ -120,12 +123,12 @@ jobs:
                     "<style>" +
                     "  :root { --red: #D31A2B; --bg: #0C0E12; --card: #15181F; --border: #232834; --text: #FFFFFF; --sub: #8B93A7; --ok: #34D399; --gold: #F59E0B; }" +
                     "  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }" +
-                    "  body { background: var(--bg); color: var(--text); padding: 16px 14px 60px; min-height: 100vh; overflow-x: hidden; }" +
+                    "  body { background: var(--bg); color: var(--text); padding: 16px 14px 60px; min-height: 100vh; }" +
                     "  .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }" +
                     "  .menu-btn { background: #1B1F2A; border: 1px solid var(--border); color: #fff; width: 42px; height: 42px; border-radius: 10px; font-size: 20px; display: flex; align-items: center; justify-content: center; cursor: pointer; }" +
                     "  .title-group { text-align: center; flex: 1; }" +
                     "  .badge { display: inline-flex; align-items: center; background: rgba(211,26,43,0.15); border: 1px solid rgba(211,26,43,0.35); padding: 3px 10px; border-radius: 99px; color: var(--red); font-size: 10px; font-weight: 800; letter-spacing: 1px; }" +
-                    "  h1 { font-size: 20px; font-weight: 900; margin-top: 3px; }" +
+                    "  h1 { font-size: 19px; font-weight: 900; margin-top: 3px; }" +
                     "  .curr-month-pill { font-size: 11px; color: var(--gold); font-weight: 700; margin-top: 2px; }" +
                     "  .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 100; opacity: 0; pointer-events: none; transition: 0.3s ease; }" +
                     "  .drawer-overlay.active { opacity: 1; pointer-events: auto; }" +
@@ -137,16 +140,13 @@ jobs:
                     "  .cal-toggle { display: grid; grid-template-columns: 1fr 1fr; background: #0A0C10; padding: 4px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 16px; }" +
                     "  .cal-btn { background: none; border: none; color: var(--sub); padding: 8px 0; font-size: 13px; font-weight: 700; border-radius: 8px; cursor: pointer; }" +
                     "  .cal-btn.active { background: var(--red); color: #fff; }" +
-                    "  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 14px; position: relative; overflow: hidden; }" +
+                    "  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 14px; position: relative; }" +
                     "  .card::before { content: ''; position: absolute; top: 0; right: 0; width: 4px; height: 100%; background: var(--red); }" +
                     "  label { display: block; font-size: 11px; color: var(--sub); margin: 10px 0 5px; font-weight: 700; }" +
-                    "  select, input { width: 100%; background: #0A0C10; border: 1px solid #2B313F; border-radius: 10px; color: #fff; padding: 11px 12px; font-size: 14px; font-weight: 700; outline: none; transition: border-color 0.2s; }" +
-                    "  select:focus, input:focus { border-color: var(--red); }" +
+                    "  select, input { width: 100%; background: #0A0C10; border: 1px solid #2B313F; border-radius: 10px; color: #fff; padding: 11px 12px; font-size: 14px; font-weight: 700; outline: none; }" +
                     "  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }" +
-                    "  .btn-add { width: 100%; margin-top: 14px; background: #1B212D; border: 1px solid #333C50; color: #fff; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }" +
-                    "  .btn-add:active { background: #222938; }" +
-                    "  .btn-sum { width: 100%; margin-top: 14px; background: var(--red); border: none; color: #fff; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 900; cursor: pointer; box-shadow: 0 4px 15px rgba(211,26,43,0.35); }" +
-                    "  .btn-sum:active { transform: scale(0.98); }" +
+                    "  .btn-add { width: 100%; margin-top: 14px; background: #1B212D; border: 1px solid #333C50; color: #fff; padding: 13px; border-radius: 12px; font-size: 14px; font-weight: 800; cursor: pointer; }" +
+                    "  .btn-sum { width: 100%; margin-top: 14px; background: var(--red); border: none; color: #fff; padding: 14px; border-radius: 12px; font-size: 15px; font-weight: 900; cursor: pointer; }" +
                     "  .route-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }" +
                     "  .route-info b { font-size: 15px; color: #fff; display: block; }" +
                     "  .route-info span { font-size: 11px; color: var(--sub); }" +
@@ -155,7 +155,7 @@ jobs:
                     "  .btn-del { background: rgba(211,26,43,0.15); border: 1px solid rgba(211,26,43,0.3); color: var(--red); font-size: 14px; width: 28px; height: 28px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; }" +
                     "  .total-card { background: linear-gradient(135deg, #15181F 0%, #1c1518 100%); border: 1px solid rgba(211,26,43,0.4); border-radius: 16px; padding: 18px; text-align: center; margin-top: 14px; }" +
                     "  .tot-title { font-size: 12px; color: var(--sub); font-weight: 700; }" +
-                    "  .tot-val { font-size: 36px; font-weight: 900; color: var(--ok); font-variant-numeric: tabular-nums; margin: 4px 0; }" +
+                    "  .tot-val { font-size: 34px; font-weight: 900; color: var(--ok); margin: 4px 0; font-variant-numeric: tabular-nums; }" +
                     "  .tot-sub { font-size: 12px; color: var(--sub); }" +
                     "</style></head><body>" +
                     "  <div class='drawer-overlay' id='drawerOverlay' onclick='toggleDrawer(false)'></div>" +
@@ -168,7 +168,6 @@ jobs:
                     "    </div>" +
                     "    <label>انتخاب ماه کاری</label>" +
                     "    <select id='monthSelect' onchange='changeActiveMonth()'></select>" +
-                    "    <div style='margin-top:auto; font-size:11px; color:var(--sub); text-align:center;'>پروازهای هر ماه به طور کاملاً مستقل در حافظه ثبت و محاسبه می‌شوند.</div>" +
                     "  </div>" +
                     "  <div class='top-bar'>" +
                     "    <button class='menu-btn' onclick='toggleDrawer(true)'>☰</button>" +
@@ -197,9 +196,9 @@ jobs:
                     "    <button class='btn-sum' onclick='calculateTotalHours()'>🧮 محاسبه و بستن جمع ساعات</button>" +
                     "  </div>" +
                     "  <div class='total-card' id='summaryBox' style='display:none;'>" +
-                    "    <div class='tot-title'>مجموع ساعات پرواز بسته شده (Total Fix Time)</div>" +
+                    "    <div class='tot-title'>مجموع ساعات پرواز (Total Block/Fix Time)</div>" +
                     "    <div class='tot-val' id='totalDisplay'>00:00</div>" +
-                    "    <div class='tot-sub' id='totalCountDisplay'>۰ سورت پروازی • ۰ دقیقه</div>" +
+                    "    <div class='tot-sub' id='totalCountDisplay'>۰ لگ پروازی • ۰ دقیقه</div>" +
                     "  </div>" +
                     "  <script>" +
                     "    const AVA_ROUTES_DB = [" +
@@ -224,18 +223,19 @@ jobs:
                     "      { code: 'MHD-OMH', name: 'مشهد ⇄ ارومیه', dur: '03:05', min: 185 }," +
                     "      { code: 'OMH-THR', name: 'ارومیه ⇄ تهران', dur: '01:35', min: 95 }," +
                     "      { code: 'THR-ADU', name: 'تهران ⇄ اردبیل', dur: '01:20', min: 80 }," +
-                    "      { code: 'ADU-MHD', name: 'اردبیل ⇄ مشهد', dur: '02:25', min: 14', name: 'مشهد ⇄ تبریز', dur: '03:00', min: 180 }," +
-                    "      { code: 'TBZ-MHD', name: 'تبریز ⇄ مشهد', dur: '02:40', min: 160 }," +
-                    "      { code: 'THR-OMH', name: 'تهران ⇄ ارومیه', dur: '01:40', min: 100 }," +
-                    "      { code: 'OMH-MHD', name: 'ارومیه ⇄ مشهد', dur: '02:35', min: 155 }," +
-                    "      { code: 'MHD-OMH', name: 'مشهد ⇄ ارومیه', dur: '03:05', min: 185 }," +
-                    "      { code: 'OMH-THR', name: 'ارومیه ⇄ تهران', dur: '01:35', min: 95 }," +
-                    "      { code: 'THR-ADU', name: 'تهران ⇄ اردبیل', dur: '01:20', min: 80 }," +
                     "      { code: 'ADU-MHD', name: 'اردبیل ⇄ مشهد', dur: '02:25', min: 145 }," +
                     "      { code: 'MHD-ADU', name: 'مشهد ⇄ اردبیل', dur: '02:40', min: 160 }," +
                     "      { code: 'ADU-THR', name: 'اردبیل ⇄ تهران', dur: '01:15', min: 75 }," +
                     "      { code: 'THR-BND', name: 'تهران ⇄ بندرعباس', dur: '02:20', min: 140 }," +
-                    "      { code: 'BND-THR', name: 'بندرعباس ⇄ تهران', dur: '02: 95 }," +
+                    "      { code: 'BND-THR', name: 'بندرعباس ⇄ تهران', dur: '02:35', min: 155 }," +
+                    "      { code: 'MHD-KIH', name: 'مشهد ⇄ کیش', dur: '03:05', min: 185 }," +
+                    "      { code: 'KIH-MHD', name: 'کیش ⇄ مشهد', dur: '03:00', min: 180 }," +
+                    "      { code: 'THR-AWZ', name: 'تهران ⇄ اهواز', dur: '01:30', min: 90 }," +
+                    "      { code: 'AWZ-THR', name: 'اهواز ⇄ تهران', dur: '01:30', min: 90 }," +
+                    "      { code: 'THR-ABD', name: 'تهران ⇄ آبادان', dur: '01:40', min: 100 }," +
+                    "      { code: 'ABD-MHD', name: 'آبادان ⇄ مشهد', dur: '02:35', min: 155 }," +
+                    "      { code: 'MHD-ABD', name: 'مشهد ⇄ آبادان', dur: '02:55', min: 175 }," +
+                    "      { code: 'ABD-THR', name: 'آبادان ⇄ تهران', dur: '01:35', min: 95 }," +
                     "      { code: 'THR-SYZ', name: 'تهران ⇄ شیراز', dur: '01:40', min: 100 }," +
                     "      { code: 'SYZ-THR', name: 'شیراز ⇄ تهران', dur: '01:40', min: 100 }," +
                     "      { code: 'MHD-NJF', name: 'مشهد ⇄ نجف', dur: '03:20', min: 200 }," +
@@ -307,7 +307,7 @@ jobs:
                     "    function updateMonthHeader() {" +
                     "      const [type, idx] = activeMonthKey.split('_');" +
                     "      const name = (type === 'shamsi' ? SHAMSI_MONTHS : MILADI_MONTHS)[Number(idx)];" +
-                    "      document.getElementById('activeMonthBadge').innerText = `ماه انتخابی: ${name} (${type === 'shamsi' ? 'شمسی' : 'میلادی'})`;" +
+                    "      document.getElementById('activeMonthBadge').innerText = `ماه: ${name} (${type === 'shamsi' ? 'شمسی' : 'میلادی'})`;" +
                     "    }" +
                     "    function initRouteOptions() {" +
                     "      const sel = document.getElementById('routeSelect');" +
@@ -407,3 +407,21 @@ jobs:
                     "      initRouteOptions();" +
                     "    };" +
                     "  </script>" +
+                    "</body></html>";
+
+                webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
+            }
+        }
+        EOF
+
+    - name: Build APK with Gradle
+      run: |
+        chmod +x gradlew || gradle wrapper --gradle-version 8.5
+        chmod +x gradlew
+        ./gradlew assembleRelease --no-daemon --stacktrace
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AvaFix-v2.4
+        path: app/build/outputs/apk/release/*.apk
