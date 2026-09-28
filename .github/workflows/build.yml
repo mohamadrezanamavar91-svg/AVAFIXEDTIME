@@ -30,7 +30,7 @@ jobs:
     - name: Install Python Dependencies
       run: pip install Pillow
 
-    - name: Generate Assets & Android Project
+    - name: Build Android Project & Assets
       run: |
         mkdir -p app/src/main/assets
         mkdir -p app/src/main/res/mipmap-hdpi
@@ -77,7 +77,7 @@ jobs:
         EOF
         python make_icon.py
 
-        # 2. Settings Gradle (with Repositories)
+        # 2. Settings Gradle
         cat << 'EOF' > settings.gradle
         pluginManagement {
             repositories {
@@ -97,19 +97,52 @@ jobs:
         include ':app'
         EOF
 
-        # 3. App build.gradle
-        cat << 'EOF' > app/build.gradle
-        plugins {
-            id 'com.android.application' version '8.2.2' apply false
-        }
-        EOF
-
+        # 3. Root build.gradle
         cat << 'EOF' > build.gradle
         plugins {
             id 'com.android.application' version '8.2.2' apply false
         }
         EOF
 
+        # 4. App build.gradle (Signed Release with Debug Key
+            "app/src/main/res/mipmap-xhdpi/ic_launcher.png": 96,
+            "app/src/main/res/mipmap-xxhdpi/ic_launcher.png": 144,
+            "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": 192
+        }
+        for path, s in sizes.items():
+            icon = generate_ava_icon(s)
+            icon.save(path, "PNG")
+        EOF
+        python make_icon.py
+
+        # 2. Settings Gradle
+        cat << 'EOF' > settings.gradle
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        rootProject.name = "AvaFix"
+        include ':app'
+        EOF
+
+        # 3. Root build.gradle
+        cat << 'EOF' > build.gradle
+        plugins {
+            id 'com.android.application' version '8.2.2' apply false
+        }
+        EOF
+
+        # 4. App build.gradle (Signed Release with Debug Key)
         cat << 'EOF' > app/build.gradle
         plugins {
             id 'com.android.application'
@@ -129,45 +162,17 @@ jobs:
 
             buildTypes {
                 release {
+                    signingConfig signingConfigs.debug
                     minifyEnabled false
                 }
             }
         }
         EOF
 
-        # 4. Strings & Manifest
+        # 5. Strings & Manifest
         cat << 'EOF' > app/src/main/res/values/strings.xml
         <resources>
-            <string name="app_name">AvaFix</string>
-        </resources>
-        EOF
-
-        cat << 'EOF' > app/src/main/AndroidManifest.xml
-        <?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-            <uses-permission android:name="android.permission.INTERNET" />
-            <application
-                android:label="@string/app_name"
-                android:icon="@mipmap/ic_launcher"
-                android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
-                <activity
-                    android:name=".MainActivity"
-                    android:exported="true">
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN" />
-                        <category android:name="android.intent.category.LAUNCHER" />
-                    </intent-filter>
-                </activity>
-            </application>
-        </manifest>
-        EOF
-
-        # 5. Java Activity
-        cat << 'EOF' > app/src/main/java/com/avafix/logbook/MainActivity.java
-        package com.avafix.logbook;
-
-        import android.app.Activity;
-        import android.os.Bundle;
+            <string name="app_nameimport android.os.Bundle;
         import android.webkit.WebView;
         import android.webkit.WebSettings;
 
@@ -179,62 +184,304 @@ jobs:
                 WebSettings settings = webView.getSettings();
                 settings.setJavaScriptEnabled(true);
                 settings.setDomStorageEnabled(true);
+                settings.setDatabaseEnabled(true);
                 webView.loadUrl("file:///android_asset/index.html");
                 setContentView(webView);
             }
         }
         EOF
 
-        # 6. HTML Asset
+        # 7. AvaFix HTML/JS Full App
         cat << 'EOF' > app/src/main/assets/index.html
         <!DOCTYPE html>
         <html lang="fa" dir="rtl">
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
             <title>AvaFix v2.7</title>
             <style>
+                :root {
+                    --bg-dark: #090B10;
+                    --card-bg: #12151D;
+                    --primary-red: #D31A2B;
+                    --accent-blue: #3182CE;
+                    --text-main: #FFFFFF;
+                    --text-sub: #A0AEC0;
+                    --border-clr: #232936;
+                }
+                * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
                 body {
                     margin: 0;
-                    padding: 24px;
-                    background: #090B10;
-                    color: #FFFFFF;
+                    padding: 0;
+                    background: var(--bg-dark);
+                    color: var(--text-main);
                     font-family: system-ui, -apple-system, sans-serif;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    min-height: 80vh;
-                    text-align: center;
+                    direction: rtl;
                 }
-                .badge {
-                    background: #D31A2B;
-                    padding: 8px 16px;
-                    border-radius: 20px;
-                    font-size: 14px;
-                    font-weight: bold;
+                .header {
+                    background: var(--card-bg);
+                    padding: 16px 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    border-bottom: 1px solid var(--border-clr);
+                    position: sticky;
+                    top: 0;
+                    z-index: 100;
+                }
+                .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; }
+                .brand-badge { background: var(--primary-red); color: white; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
+                .drawer-btn {
+                    background: #1A202C;
+                    border: 1px solid var(--border-clr);
+                    color: white;
+                    padding: 8px 14px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 13px;
+                }
+                .container { padding: 16px; max-width: 500px; margin: 0 auto; }
+                .card {
+                    background: var(--card-bg);
+                    border: 1px solid var(--border-clr);
+                    border-radius: 12px;
+                    padding: 16px;
                     margin-bottom: 16px;
                 }
-                h1 { margin: 0 0 10px 0; font-size: 24px; }
-                p { color: #A0AEC0; font-size: 14px; }
+                .form-group { margin-bottom: 12px; }
+                label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 6px; }
+                select, input {
+                    width: 100%;
+                    background: #1A202C;
+                    border: 1px solid var(--border-clr);
+                    color: white;
+                    padding: 10px 12px;
+                    border-radius: 8px;
+                    font-size: 14px;
+                    outline: none;
+                }
+                button.btn-primary {
+                    width: 100%;
+                    background: var(--primary-red);
+                    color: white;
+                    border: none;
+                    padding: 12px;
+                    border-radius: 8px;
+                    font-size: 15px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    margin-top: 8px;
+                }
+                /* Drawer Modal */
+                .drawer-overlay {
+                    position: fixed;
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0,0,0,0.7);
+                    display: none;
+                    z-index: 200;
+                }
+                .drawer-content {
+                    position: fixed;
+                    top: 0; bottom: 0; right: -320px;
+                    width: 300px;
+                    background: var(--card-bg);
+                    border-left: 1px solid var(--border-clr);
+                    z-index: 201;
+                    transition: right 0.3s ease;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .drawer-open .drawer-overlay { display: block; }
+                .drawer-open .drawer-content { right: 0; }
+                .drawer-header {
+                    padding: 16px;
+                    border-bottom: 1px solid var(--border-clr);
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .drawer-body {
+                    padding: 16px;
+                    overflow-y: auto;
+                    flex: 1;
+                }
+                .archive-item {
+                    background: #1A202C;
+                    border: 1px solid var(--border-clr);
+                    border-radius: 8px;
+                    padding: 10px 12px;
+                    margin-bottom: 10px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+                .archive-item-info { font-size: 13px; }
+                .archive-item-date { font-size: 11px; color: var(--text-sub); }
+                .btn-del {
+                    background: #E53E3E;
+                    border: none;
+                    color: white;
+                    padding: 4px 8px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 11px;
+                }
             </style>
         </head>
         <body>
-            <div class="badge">AvaFix v2.7</div>
-            <h1>هواپیمایی آوا</h1>
-            <p>سیستم محاسبه و بایگانی لاگ‌بوک خدمه پرواز</p>
+            <div class="header">
+                <div class="brand">
+                    <span class="brand-badge">AVA</span>
+                    <span>AvaFix v2.7</span>
+                </div>
+                <button class="drawer-btn" onclick="toggleDrawer(true)">📂 بایگانی پروازها</button>
+            </div>
+
+            <div class="container">
+                <div class="card">
+                    <h3 style="margin-top:0; font-size:15px; color:#E2E8F0;">ثبت پرواز جدید</h3>
+                    <div class="form-group">
+                        <label>مسیر پروازی</label>
+                        <select id="routeSelect">
+                            <option value="THR-MHD|01:15">تهران (THR) ➔ مشهد (MHD) — ۱:۱۵</option>
+                            <option value="MHD-THR|01:15">مشهد (MHD) ➔ تهران (THR) — ۱:۱۵</option>
+                            <option value="THR-SYZ|01:10">تهران (THR) ➔ شیراز (SYZ) — ۱:۱۰</option>
+                            <option value="SYZ-THR|01:10">شیراز (SYZ) ➔ تهران (THR) — ۱:۱۰</option>
+                            <option value="THR-KIH|01:30">تهران (THR) ➔ کیش (KIH) — ۱:۳۰</option>
+                            <option value="KIH-THR|01:30">کیش (KIH) ➔ تهران (THR) — ۱:۳۰</option>
+                            <option value="THR-AWZ|01:05">تهران (THR) ➔ اهواز (AWZ) — ۱:۰۵</option>
+                            <option value="AWZ-THR|01:05">اهواز (AWZ) ➔ تهران (THR) — ۱:۰۵</option>
+                            <option value="THR-IFN|00:45">تهران (THR) ➔ اصفهان (IFN) — ۰:۴۵</option>
+                            <option value="IFN-THR|00:45">اصفهان (IFN) ➔ تهران (THR) — ۰:۴۵</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>شماره پرواز</label>
+                        <input type="text" id="flightNo" placeholder="مثال: AVA-7102">
+                    </div>
+                    <div class="form-group">
+                        <label>تایپ هواپیما</label>
+                        <input type="text" id="aircraftType" value="B737-500" placeholder="مثال: B737-500">
+                    </div>
+                    <button class="btn-primary" onclick="saveFlight()">ذخیره در لاگ‌بوک</button>
+                </div>
+            </div>
+
+            <!-- Drawer Container -->
+            <div id="drawerRoot">
+                <div class="drawer-overlay" onclick="toggleDrawer(false)"></div>
+                <div class="drawer-content">
+                    <div class="drawer-header">
+                        <h4 style="margin:0;">بایگانی لاگ‌بوک</h4>
+                        <span style="cursor:pointer; font-size:20px;" onclick="toggleDrawer(false)">✕</span>
+                    </div>
+                    <div class="drawer-body" id="archiveList">
+                        <!-- Items rendered by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <script>
+                function toggleDrawer(open) {
+                    const root = document.getElementById('drawerRoot');
+                    if(open) {
+                        root.classList.add('drawer-open');
+                        renderArchive();
+                    } else {
+                        root.classList.remove('drawer-open');
+                    }
+                }
+
+                function getFlights() {
+                    return JSON.parse(localStorage.getItem('ava_flights') || '[]');
+                }
+
+                function saveFlight() {
+                    const route = document.getElementById('routeSelect').value.split('|');
+                    const flightNo = document.getElementById('flightNo').value.trim() || 'AVA-FLT';
+                    const ac = document.getElementById('aircraftType').value.trim() || 'B737';
+
+                    const item = {
+                        id: Date.now(),
+                        route: route[0],
+                        duration: route[1],
+                        flightNo: flightNo,
+                        ac: ac,
+                        date: new Date().toLocaleDateString('fa-IR')
+                    };
+
+                    const list = getFlights();
+                    list.unshift(item);
+                    localStorage.setItem('ava_flights', JSON.stringify(list));
+                    alert('پرواز با موفقیت در لاگ‌بوک ثبت شد.');
+                    toggleDrawer(true);
+                }
+
+                function deleteFlight(id) {
+                    let list = getFlights();
+                    list = list.filter(x => x.id !== id);
+                    localStorage.setItem('ava_flights', JSON.stringify(list));
+                    renderArchive();
+                }
+
+                function renderArchive() {
+                    const list = getFlights();
+                    const container = document.getElementById('archiveList');
+                    if(list.length === 0) {
+                        container.innerHTML = '<div style="color:#718096; text-align:center; padding:20px 0;">هیچ پروازی ثبت نشده است</div>';
+                        return;
+                    }
+                    container.innerHTML = list.map(item => `
+                        <div class="archive-item">
+                            <div>
+                                <div class="archive-item-info"><strong>${item.flightNo}</strong> (${item.route})</div>
+                                <div class="archive-item-date">⏱ ${item.duration} | ✈️ ${item.ac} | 📅 ${item.date}</div>
+                            </div>
+                            <button class="btn-del" onclick="deleteFlight(${item.id})">حذف</button>
+                        </div>
+                    `).join('');
+                }
+            </script>
         </body>
         </html>
         EOF
 
-    - name: Build with Gradle Wrapper
+    - name: Build Signed Release APK
       run: |
         gradle wrapper --gradle-version 8.5
         chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
 
-    - name: Upload APK
+    - name: Rename APK
+      run: |
+        mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/AvaFix-v2.7.apk || true
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:})</div>
+                                <div class="archive-item-date">⏱ ${item.duration} | ✈️ ${item.ac} | 📅 ${item.date}</div>
+                            </div>
+                            <button class="btn-del" onclick="deleteFlight(${item.id})">حذف</button>
+                        </div>
+                    `).join('');
+                }
+            </script>
+        </body>
+        </html>
+        EOF
+
+    - name: Build Signed Release APK
+      run: |
+        gradle wrapper --gradle-version 8.5
+        chmod +x gradlew
+        ./gradlew assembleRelease --no-daemon
+
+    - name: Rename APK
+      run: |
+        mv app/build/outputs/apk/release/app-release.apk app/build/outputs/apk/release/AvaFix-v2.7.apk || true
+
+    - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: AvaFix-v2.7-Release
-        path: app/build/outputs/apk/release/app-release-unsigned.apk
+        path: app/build/outputs/apk/release/*.apk
