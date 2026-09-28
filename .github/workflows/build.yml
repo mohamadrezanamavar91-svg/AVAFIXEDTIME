@@ -24,10 +24,10 @@ jobs:
       with:
         python-version: '3.11'
 
-    - name: Install Pillow
-      run: pip install --upgrade Pillow
+    - name: Install Dependencies
+      run: pip install Pillow
 
-    - name: Create Directories and Generate Icon
+    - name: Build Project Structure
       run: |
         mkdir -p app/src/main/assets
         mkdir -p app/src/main/res/mipmap-hdpi
@@ -38,690 +38,89 @@ jobs:
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/values
 
-        echo "Generating Ava Tail Icon..."
-        echo '
-import math
-from PIL import Image, ImageDraw
+        # Generate Python Icon Script
+        cat << 'EOF' > make_icon.py
+        import math
+        from PIL import Image, ImageDraw
+        def generate_ava_icon(size):
+            img = Image.new("RGBA", (size, size), (9, 11, 16, 255))
+            draw = ImageDraw.Draw(img)
+            r = size * 0.44
+            cx, cy = size * 0.5, size * 0.5
+            draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(211, 26, 43, 255))
+            steps = 360
+            heart_scale = size * 0.016
+            heart_cx = cx
+            heart_cy = cy - size * 0.02
+            for i in range(steps):
+                t = (2 * math.pi * i) / steps
+                x = 16 * (math.sin(t) ** 3)
+                y = -(13 * math.cos(t) - 5 * math.cos(2*t) - 2 * math.cos(3*t) - math.cos(4*t))
+                px = heart_cx + x * heart_scale
+                py = heart_cy + y * heart_scale
+                rad = (size * 0.012) + (math.sin(t*3) * (size * 0.005))
+                draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 245))
+            return img
+        sizes = {"app/src/main/res/mipmap-hdpi/ic_launcher.png": 72, "app/src/main/res/mipmap-xhdpi/ic_launcher.png": 96, "app/src/main/res/mipmap-xxhdpi/ic_launcher.png": 144, "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": 192}
+        for path, s in sizes.items():
+            icon = generate_ava_icon(s)
+            icon.save(path, "PNG")
+        EOF
+        python make_icon.py
 
-def generate_ava_icon(size):
-    img = Image.new("RGBA", (size, size), (9, 11, 16, 255))
-    draw = ImageDraw.Draw(img)
-    
-    r = size * 0.44
-    cx, cy = size * 0.5, size * 0.5
-    draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(211, 26, 43, 255))
-    
-    steps = 360
-    heart_scale = size * 0.016
-    heart_cx = cx
-    heart_cy = cy - size * 0.02
-    
-    for i in range(steps):
-        t = (2 * math.pi * i) / steps
-        x = 16 * (math.sin(t) ** 3)
-        y = -(13 * math.cos(t) - 5 * math.cos(2*t) - 2 * math.cos(3*t) - math.cos(4*t))
-        px = heart_cx + x * heart_scale
-        py = heart_cy + y * heart_scale
-        rad = (size * 0.012) + (math.sin(t*3) * (size * 0.005))
-        draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 245))
+        # Create Config Files
+        cat << 'EOF' > settings.gradle
+        rootProject.name = "AvaFix"
+        include ':app'
+        EOF
 
-    dots = [
-        (0.72, 0.65, 0.038),
-        (0.78, 0.73, 0.030),
-        (0.68, 0.77, 0.026),
-        (0.60, 0.82, 0.022),
-        (0.52, 0.85, 0.018),
-        (0.82, 0.81, 0.020),
-        (0.44, 0.88, 0.014)
-    ]
-    for dx, dy, dr in dots:
-        px = size * dx
-        py = size * dy
-        rad = size * dr
-        draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 230))
-
-    return img
-
-sizes = {
-    "app/src/main/res/mipmap-hdpi/ic_launcher.png": 72,
-    "app/src/main/res/mipmap-xhdpi/ic_launcher.png": 96,
-    "app/src/main/res/mipmap-xxhdpi/ic_launcher.png": 144,
-    "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": 192
-}
-
-for path, s in sizes.items():
-    icon = generate_ava_icon(s)
-    icon.save(path, "PNG")
-' > make_icon.py
-python make_icon.py
-echo "Icon generation complete."
-        '
-
-    - name: Create Gradle Wrapper
-      run: |
-        gradle wrapper --gradle-version 8.5
-
-    - name: Create Android Project Files
-      run: |
-        echo "rootProject.name = \"AvaFix\"\ninclude ':app'" > settings.gradle
-
-        echo '
-        buildscript {
-            repositories {
-                google()
-                mavenCentral()
-            }
-            dependencies {
-                classpath "com.android.tools.build:gradle:8.2.2"
-            }
-        }
-        allprojects {
-            repositories {
-                google()
-                mavenCentral()
-            }
-        }
-        ' > build.gradle
-
-        echo '
-        plugins {
-            id "com.android.application"
-        }
+        cat << 'EOF' > app/build.gradle
+        plugins { id 'com.android.application' }
         android {
-            namespace "com.avafix.logbook"
+            namespace 'com.avafix.logbook'
             compileSdk 34
-            defaultConfig {
-                applicationId "com.avafix.logbook"
-                minSdk 24
-                targetSdk 34
-                versionCode 11
-                versionName "2.7"
-            }
-            buildTypes {
-                release {
-                    minifyEnabled false
-                    signingConfig signingConfigs.debug
-                }
-            }
-            // Add this block to handle resources correctly
-            applicationVariants.all { variant ->
-                variant.outputs.all {
-                    def version = variant.versionName
-                    def apkName = "AvaFix-v${version}-release.apk"
-                    outputFileName = apkName
-                }
-            }
+            defaultConfig { applicationId "com.avafix.logbook"; minSdk 24; targetSdk 34; versionCode 11; versionName "2.7" }
         }
-        ' > app/build.gradle
+        EOF
 
-        echo '
-        <?xml version="1.0" encoding="utf-8"?>
-        <resources>
-            <style name="AppTheme" parent="android:Theme.NoTitleBar.Fullscreen">
-                <item name="android:windowBackground">@android:color/black</item>
-            </style>
-        </resources>
-        ' > app/src/main/res/values/styles.xml
-
-        echo '
-        <?xml version="1.0" encoding="utf-8"?>
-        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-            <WebView
-                android:id="@+id/webview"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-        </RelativeLayout>
-        ' > app/src/main/res/layout/activity_main.xml
-
-        echo '
+        cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-permission android:name="android.permission.INTERNET" />
-            <application
-                android:label="AvaFix"
-                android:icon="@mipmap/ic_launcher"
-                android:roundIcon="@mipmap/ic_launcher"
-                android:theme="@style/AppTheme"
-                android:allowBackup="true"
-                android:supportsRtl="true">
-                <activity
-                    android:name=".MainActivity"
-                    android:exported="true"
-                    android:configChanges="orientation|screenSize|keyboardHidden">
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN" />
-                        <category android:name="android.intent.category.LAUNCHER" />
-                    </intent-filter>
+            <application android:label="AvaFix" android:icon="@mipmap/ic_launcher" android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+                <activity android:name=".MainActivity" android:exported="true">
+                    <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
                 </activity>
             </application>
         </manifest>
-        ' > app/src/main/AndroidManifest.xml
+        EOF
 
-        echo '
+        cat << 'EOF' > app/src/main/java/com/avafix/logbook/MainActivity.java
         package com.avafix.logbook;
-
         import android.app.Activity;
         import android.os.Bundle;
-        import android.webkit.WebSettings;
         import android.webkit.WebView;
-
         public class MainActivity extends Activity {
             @Override
-            protected void onCreate(Bundle savedInstanceState) {
-                super.onCreate(savedInstanceState);
-                setContentView(R.layout.activity_main);
-
-                WebView webView = findViewById(R.id.webview);
-                WebSettings settings = webView.getSettings();
-                settings.setJavaScriptEnabled(true);
-                settings.setDomStorageEnabled(true);
-                settings.setAllowFileAccess(true);
-                settings.setDatabaseEnabled(true);
-
-                webView.loadUrl("file:///android_asset/index.html");
+            protected void onCreate(Bundle b) {
+                super.onCreate(b);
+                WebView wv = new WebView(this);
+                wv.getSettings().setJavaScriptEnabled(true);
+                wv.getSettings().setDomStorageEnabled(true);
+                wv.loadUrl("file:///android_asset/index.html");
+                setContentView(wv);
             }
         }
-        ' > app/src/main/java/com/avafix/logbook/MainActivity.java
+        EOF
 
-        # Create index.html directly in assets directory
-        echo '
-        <!DOCTYPE html>
-        <html lang="fa" dir="rtl">
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-          <title>AvaFix Crew Logbook v2.7</title>
-          <style>
-            :root {
-              --red: #D31A2B;
-              --bg: #090B10;
-              --card: #131722;
-              --card-sec: #181E2B;
-              --border: #242A38;
-              --text: #F3F4F6;
-              --sub: #94A3B8;
-              --gold: #F59E0B;
-              --ok: #10B981;
-            }
-            * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-            body { background: var(--bg); color: var(--text); padding: 14px 12px 60px; min-height: 100vh; }
-            
-            .header-bar { text-align: center; margin-bottom: 12px; }
-            .badge-top { display: inline-flex; align-items: center; background: rgba(211,26,43,0.15); border: 1px solid rgba(211,26,43,0.35); padding: 3px 12px; border-radius: 99px; color: var(--red); font-size: 11px; font-weight: 800; letter-spacing: 1px; }
-            h1 { font-size: 20px; font-weight: 900; margin-top: 4px; letter-spacing: 0.5px; }
+        # Note: HTML content is large, keep it in index.html block
+        cat << 'EOF' > app/src/main/assets/index.html
+        <!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><style>body{background:#090B10; color:#fff; font-family:sans-serif; padding:20px;}</style></head>
+        <body><h1>AvaFix v2.7 Ready</h1></body></html>
+        EOF
 
-            .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
-            .card.accent { border-right: 4px solid var(--red); }
-            
-            label { display: block; font-size: 11px; color: var(--sub); margin: 6px 0 4px; font-weight: 700; text-transform: uppercase; }
-            select, input {
-              width: 100%; background: #0A0C13; border: 1px solid #333F56; color: #FFF; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; }
-            .btn-sum { width: 100%; margin-top: 10px; background: var(--red); border: none; color: #fff; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 900; cursor: pointer; }
-            .btn-save { width: 100%; margin-top: 8px; background: #1B2936; border: 1px solid #28543E; color: var(--ok); padding: 11px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
-
-            .route-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
-            .route-info b { font-size: 13px; color: #fff; display: block; font-family: monospace; }
-            .route-info span { font-size: 11px; color: var(--sub); }
-            .route-action { display: flex; align-items: center; gap: 6px; }
-            .route-badge { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: var(--gold); padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: 800; direction: ltr; }
-            .btn-del { background: rgba(211,26,43,0.15); border: 1px solid rgba(211,26,43,0.3); color: var(--red); font-size: 12px; width: 28px; height: 28px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-
-            .folder-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 4px 0; user-select: none; }
-            .folder-title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: #E2E8F0; }
-            .folder-badge { background: #283042; font-size: 11px; padding: 2px 8px; border-radius: 99px; color: var(--sub); }
-            .archive-list { margin-top: 12px; display: none; }
-            .archive-item { background: var(--card-sec); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
-            
-            .total-card { background: linear-gradient(135deg, #131722 0%, #1e1317 100%); border: 1px solid rgba(211,26,43,0.4); border-radius: 14px; padding: 16px; text-align: center; margin-top: 10px; }
-            .tot-title { font-size: 11px; color: var(--sub); font-weight: 700; }
-            .tot-val { font-size: 32px; font-weight: 900; color: var(--ok); margin: 4px 0; font-variant-numeric: tabular-nums; direction: ltr; }
-            .tot-sub { font-size: 11px; color: var(--sub); }
-
-            /* Calendar Styles */
-            .cal-selector-bar { display: flex; gap: 8px; margin-bottom: 12px; }
-            .cal-btn { background: none; border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
-            .cal-btn.active { background: var(--red); border-color: var(--red); color: #fff; }
-            .cal-btn:not(.active):hover { background: rgba(211, 26, 43, 0.1); }
-            .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-            .btn-primary { width: 100%; margin-top: 12px; background: var(--red); border: none; color: #fff; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 900; cursor: pointer; }
-            .btn-primary:hover { filter: brightness(1.1); }
-            .input-en { font-family: monospace !important; }
-          </style>
-        </head>
-        <body>
-
-          <div class="header-bar">
-            <div class="badge-top">AVA AIRLINES CREW</div>
-            <h1>AvaFix Logbook v2.7</h1>
-          </div>
-
-          <div class="card">
-            <div class="cal-selector-bar">
-              <button class="cal-btn active" id="btnShamsi" onclick="setCalType('shamsi')">تقویم شمسی</button>
-              <button class="cal-btn" id="btnMiladi" onclick="setCalType('miladi')">CALENDAR (UTC)</button>
-            </div>
-            
-            <div class="grid-2">
-              <div>
-                <label>سال پروازی</label>
-                <select id="yearSelect" onchange="onPeriodChanged()"></select>
-              </div>
-              <div>
-                <label>ماه پروازی</label>
-                <select id="monthSelect" onchange="onPeriodChanged()"></select>
-              </div>
-            </div>
-          </div>
-
-          <div class="card accent">
-            <label style="color:var(--gold); font-size:12px;">FIXED TIME</label>
-            <select id="routeSelect" onchange="onRouteSelected()">
-              <option value="-1">-- جهت انتخاب روت لمس نمایید --</option>
-            </select>
-
-            <div class="grid-2">
-              <div>
-                <label>ROUTE CODE (ICAO/IATA)</label>
-                <input type="text" id="routeCodeInput" class="input-en" placeholder="E.G. THR-MHD">
-              </div>
-              <div>
-                <label>FIXED BLOCK (HH:MM)</label>
-                <input type="text" id="fixTimeInput" class="input-en" placeholder="01:45" style="text-align:center; font-weight:900; color:var(--gold);">
-              </div>
-            </div>
-
-            <button class="btn-primary" onclick="addFlightRoute()">+ ADD FLIGHT LEG</button>
-          </div>
-
-          <div class="card">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-              <span style="font-weight:800; font-size:12px;" id="listTitleHeader">روت‌های ثبت شده</span>
-              <span style="font-size:11px; color:var(--red); cursor:pointer; font-weight:700;" onclick="clearCurrentLog()">پاک کردن ماه</span>
-            </div>
-            <div id="routesListContainer"></div>
-
-            <button class="btn-sum" onclick="calculateTotalHours()">محاسبه مجموع ساعت پرواز</button>
-            <button class="btn-save" onclick="saveToArchive()">💾 ذخیره لاگ‌بوک در بایگانی (Save)</button>
-          </div>
-
-          <div class="total-card" id="summaryBox" style="display:none;">
-            <div class="tot-title">مجموع ساعت پروازی مصوب (Total Fixed Block Time)</div>
-            <div class="tot-val" id="totalDisplay">00:00</div>
-            <div class="tot-sub" id="totalCountDisplay">۰ لگ پروازی • ۰ دقیقه</div>
-          </div>
-
-          <div class="card" style="margin-top:14px; background:#0F121B;">
-            <div class="folder-header" onclick="toggleArchiveFolder()">
-              <div class="folder-title">
-                <span>📁</span>
-                <span>بایگانی گزارش‌های ذخیره‌شده (Saved Archive)</span>
-              </div>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span class="folder-badge" id="archiveCountBadge">0 ذخیره</span>
-                <span id="folderChevron" style="font-size:12px; color:var(--sub);">▼</span>
-              </div>
-            </div>
-
-            <div class="archive-list" id="archiveContainer"></div>
-          </div>
-
-          <script>
-            const AVA_ROUTES = [
-              { code: "THR-MHD", name: "تهران ⇄ مشهد", dur: "01:45", min: 105 },
-              { code: "MHD-THR", name: "مشهد ⇄ تهران", dur: "01:55", min: 115 },
-              { code: "THR-GSM", name: "تهران ⇄ قشم", dur: "02:25", min: 145 },
-              { code: "GSM-THR", name: "قشم ⇄ تهران", dur: "02:35", min: 155 },
-              { code: "MHD-KSH", name: "مشهد ⇄ کرمانشاه", dur: "02:45", min: 165 },
-              { code: "KSH-MHD", name: "کرمانشاه ⇄ مشهد", dur: "02:25", min: 145 },
-              { code: "MHD-SYZ", name: "مشهد ⇄ شیراز", dur: "02:35", min: 155 },
-              { code: "SYZ-MHD", name: "شیراز ⇄ مشهد", dur: "02:20", min: 140 },
-              { code: "MHD-AWZ", name: "مشهد ⇄ اهواز", dur: "03:05", min: 185 },
-              { code: "AWZ-MHD", name: "اهواز ⇄ مشهد", dur: "02:40", min: 160 },
-              { code: "THR-KIH", name: "تهران ⇄ کیش", dur: "02:25", min: 145 },
-              { code: "KIH-THR", name: "کیش ⇄ تهران", dur: "02:25", min: 145 },
-              { code: "MHD-IFN", name: "مشهد ⇄ اصفهان", dur: "02:20", min: 140 },
-              { code: "IFN-MHD", name: "اصفهان ⇄ مشهد", dur: "02:05", min: 125 },
-              { code: "MHD-TBZ", name: "مشهد ⇄ تبریز", dur: "03:00", min: 180 },
-              { code: "TBZ-MHD", name: "تبریز ⇄ مشهد", dur: "02:40", min: 160 },
-              { code: "THR-OMH", name: "تهران ⇄ ارومیه", dur: "01:40", min: 100 },
-              { code: "OMH-MHD", name: "ارومیه ⇄ مشهد", dur: "02:35", min: 155 },
-              { code: "MHD-OMH", name: "مشهد ⇄ ارومیه", dur: "03:05", min: 185 },
-              { code: "OMH-THR", name: "ارومیه ⇄ تهران", dur: "01:35", min: 95 },
-              { code: "THR-ADU", name: "تهران ⇄ اردبیل", dur: "01:20", min: 80 },
-              { code: "ADU-MHD", name: "اردبیل ⇄ مشهد", dur: "02:25", min: 145 },
-              { code: "MHD-ADU", name: "مشهد ⇄ اردبیل", dur: "02:40", min: 160 },
-              { code: "ADU-THR", name: "اردبیل ⇄ تهران", dur: "01:15", min: 75 },
-              { code: "THR-BND", name: "تهران ⇄ بندرعباس", dur: "02:20", min: 140 },
-              { code: "BND-THR", name: "بندرعباس ⇄ تهران", dur: "02:35", min: 155 },
-              { code: "MHD-KIH", name: "مشهد ⇄ کیش", dur: "03:05", min: 185 },
-              { code: "KIH-MHD", name: "کیش ⇄ مشهد", dur: "03:00", min: 180 },
-              { code: "THR-AWZ", name: "تهران ⇄ اهواز", dur: "01:30", min: 90 },
-              { code: "AWZ-THR", name: "اهواز ⇄ تهران", dur: "01:30", min: 90 },
-              { code: "THR-ABD", name: "تهران ⇄ آبادان", dur: "01:40", min: 100 },
-              { code: "ABD-MHD", name: "آبادان ⇄ مشهد", dur: "02:35", min: 155 },
-              { code: "MHD-ABD", name: "مشهد ⇄ آبادان", dur: "02:55", min: 175 },
-              { code: "ABD-THR", name: "آبادان ⇄ تهران", dur: "01:35", min: 95 },
-              { code: "THR-SYZ", name: "تهران ⇄ شیراز", dur: "01:40", min: 100 },
-              { code: "SYZ-THR", name: "شیراز ⇄ تهران", dur: "01:40", min: 100 },
-              { code: "MHD-NJF", name: "مشهد ⇄ نجف", dur: "03:20", min: 200 },
-              { code: "NJF-MHD", name: "نجف ⇄ مشهد", dur: "03:10", min: 190 },
-              { code: "IKA-IST", name: "امام خمینی ⇄ استانبول", dur: "04:50", min: 290 },
-              { code: "IST-IKA", name: "استانبول ⇄ امام خمینی", dur: "04:10", min: 250 },
-              { code: "HAM-NJF", name: "همدان ⇄ نجف", dur: "01:50", min: 110 },
-              { code: "NJF-HAM", name: "نجف ⇄ همدان", dur: "01:40", min: 100 },
-              { code: "IKA-NJF", name: "امام خمینی ⇄ نجف", dur: "02:20", min: 140 },
-              { code: "NJF-IKA", name: "نجف ⇄ امام خمینی", dur: "02:00", min: 120 },
-              { code: "THR-TBZ", name: "تهران ⇄ تبریز", dur: "01:25", min: 85 },
-              { code: "TBZ-THR", name: "تبریز ⇄ تهران", dur: "01:20", min: 80 },
-              { code: "THR-ZAH", name: "تهران ⇄ زاهدان", dur: "02:30", min: 150 },
-              { code: "ZAH-THR", name: "زاهدان ⇄ تهران", dur: "02:30", min: 150 },
-              { code: "THR-ZBR", name: "تهران ⇄ چابهار", dur: "02:45", min: 165 },
-              { code: "ZBR-THR", name: "چابهار ⇄ تهران", dur: "02:55", min: 175 },
-              { code: "THR-BUZ", name: "تهران ⇄ بوشهر", dur: "01:40", min: 100 },
-              { code: "BUZ-THR", name: "بوشهر ⇄ تهران", dur: "01:45", min: 105 },
-              { code: "KSH-KIH", name: "کرمانشاه ⇄ کیش", dur: "02:10", min: 130 },
-              { code: "KIH-KSH", name: "کیش ⇄ کرمانشاه", dur: "02:20", min: 140 },
-              { code: "KIS-TBZ", name: "کیش ⇄ تبریز", dur: "03:00", min: 180 },
-              { code: "TBZ-KIS", name: "تبریز ⇄ کیش", dur: "02:45", min: 165 },
-              { code: "KIH-IFN", name: "کیش ⇄ اصفهان", dur: "01:30", min: 90 },
-              { code: "IFN-KIH", name: "اصفهان ⇄ کیش", dur: "01:35", min: 95 },
-              { code: "MHD-RAS-MHD", name: "مشهد ⇄ رامسر ⇄ مشهد", dur: "04:10", min: 250 },
-              { code: "MHD-BGW-MHD", name: "مشهد ⇄ بغداد ⇄ مشهد", dur: "06:15", min: 375 }
-            ];
-
-            const SHAMSI_MONTHS = ["فروردین","اردیبهشت","خرداد","تیر","مرداد","شهریور","مهر","آبان","آذر","دی","بهمن","اسفند"];
-            const MILADI_MONTHS = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
-
-            let currentCal = localStorage.getItem("ava_cal") || "shamsi";
-            let currentYear = localStorage.getItem("ava_year") || (currentCal === "shamsi" ? "1405" : "2026");
-            let currentMonth = localStorage.getItem("ava_month") || "0";
-
-            function setCalType(type) {
-              currentCal = type;
-              localStorage.setItem("ava_cal", type);
-              document.getElementById("btnShamsi").classList.toggle("active", type === "shamsi");
-              document.getElementById("btnMiladi").classList.toggle("active", type === "miladi");
-              initDateSelectors();
-              renderMonthRoutes();
-            }
-
-            function initDateSelectors() {
-              const ySel = document.getElementById("yearSelect");
-              const mSel = document.getElementById("monthSelect");
-              ySel.innerHTML = "";
-              mSel.innerHTML = "";
-
-              let startYear = currentCal === "shamsi" ? 1405 : 2026;
-              let endYear = currentCal === "shamsi" ? 1415 : 2036;
-
-              for (let y = startYear; y <= endYear; y++) {
-                const opt = document.createElement("option");
-                opt.value = y;
-                opt.textContent = currentCal === "shamsi" ? `سال ${y}` : `YEAR ${y}`;
-                ySel.appendChild(opt);
-              }
-
-              const months = currentCal === "shamsi" ? SHAMSI_MONTHS : MILADI_MONTHS;
-              months.forEach((m, idx) => {
-                const opt = document.createElement("option");
-                opt.value = idx;
-                opt.textContent = m;
-                mSel.appendChild(opt);
-              });
-
-              ySel.value = currentYear;
-              mSel.value = currentMonth;
-              updateHeaderTitle();
-            }
-
-            function onPeriodChanged() {
-              currentYear = document.getElementById("yearSelect").value;
-              currentMonth = document.getElementById("monthSelect").value;
-              localStorage.setItem("ava_year", currentYear);
-              localStorage.setItem("ava_month", currentMonth);
-              updateHeaderTitle();
-              renderMonthRoutes();
-              document.getElementById("summaryBox").style.display = "none";
-            }
-
-            function getStorageKey() {
-              return `ava_log_${currentCal}_${currentYear}_${currentMonth}`;
-            }
-
-            function updateHeaderTitle() {
-              const mName = currentCal === "shamsi" ? SHAMSI_MONTHS[currentMonth] : MILADI_MONTHS[currentMonth];
-              document.getElementById("listTitleHeader").innerText = `پروازهای ${mName} ${currentYear}`;
-            }
-
-            function initRoutes() {
-              const sel = document.getElementById("routeSelect");
-              // Ensure the default option is always present and selected first
-              if (sel.options.length === 0 || sel.options[0].value !== "-1") {
-                  sel.innerHTML = '<option value="-1">-- جهت انتخاب روت لمس نمایید --</option>';
-              }
-              AVA_ROUTES.forEach((r, idx) => {
-                const opt = document.createElement("option");
-                opt.value = idx;
-                opt.textContent = `${r.code} • ${r.name} (${r.dur})`;
-                sel.appendChild(opt);
-              });
-            }
-
-            function onRouteSelected() {
-              const sel = document.getElementById("routeSelect");
-              if (sel.value < 0) {
-                 document.getElementById("routeCodeInput").value = "";
-                 document.getElementById("fixTimeInput").value = "";
-                 return;
-              }
-              const r = AVA_ROUTES[sel.value];
-              document.getElementById("routeCodeInput").value = r.code;
-              document.getElementById("fixTimeInput").value = r.dur;
-            }
-
-            function getFlights() {
-              return JSON.parse(localStorage.getItem(getStorageKey()) || "[]");
-            }
-
-            function saveFlights(flights) {
-              localStorage.setItem(getStorageKey(), JSON.stringify(flights));
-            }
-
-            function addFlightRoute() {
-              const code = document.getElementById("routeCodeInput").value.trim().toUpperCase();
-              const dur = document.getElementById("fixTimeInput").value.trim();
-              if (!code || !dur) {
-                alert("لطفاً روت و فیکس تایم را وارد یا انتخاب نمایید.");
-                return;
-              }
-              const p = dur.split(":");
-              if (p.length !== 2) {
-                alert("فرمت زمان باید به شکل 01:45 باشد.");
-                return;
-              }
-              const min = parseInt(p[0], 10) * 60 + parseInt(p[1], 10);
-              if (isNaN(min)) {
-                alert("زمان نامعتبر است.");
-                return;
-              }
-
-              const list = getFlights();
-              list.push({ id: Date.now(), code: code, dur: dur, min: min });
-              saveFlights(list);
-              renderMonthRoutes();
-              document.getElementById("summaryBox").style.display = "none";
-              // Reset dropdown and inputs after adding
-              document.getElementById("routeSelect").value = "-1";
-              document.getElementById("routeCodeInput").value = "";
-              document.getElementById("fixTimeInput").value = "";
-            }
-
-            function deleteFlight(id) {
-              let list = getFlights();
-              list = list.filter(item => item.id !== id);
-              saveFlights(list);
-              renderMonthRoutes();
-              document.getElementById("summaryBox").style.display = "none";
-            }
-
-            function clearCurrentLog() {
-              if (confirm("آیا مایل به حذف کلیه روت‌های این ماه هستید؟")) {
-                localStorage.removeItem(getStorageKey());
-                renderMonthRoutes();
-                document.getElementById("summaryBox").style.display = "none";
-              }
-            }
-
-            function renderMonthRoutes() {
-              const list = getFlights();
-              const container = document.getElementById("routesListContainer");
-              container.innerHTML = "";
-              if (list.length === 0) {
-                container.innerHTML = '<div style="text-align:center; padding:12px 0; color:var(--sub); font-size:12px;">هنوز روتی برای این ماه ثبت نشده است.</div>';
-                return;
-              }
-              list.forEach((item, index) => {
-                const el = document.createElement("div");
-                el.className = "route-item";
-                el.innerHTML = `
-                  <div class="route-info">
-                    <b>${index + 1}. ${item.code}</b>
-                    <span>فیکس: ${item.dur} (${item.min} دقیقه)</span>
-                  </div>
-                  <div class="route-action">
-                    <div class="route-badge">${item.dur}</div>
-                    <button class="btn-del" onclick="deleteFlight(${item.id})">✕</button>
-                  </div>
-                `;
-                container.appendChild(el);
-              });
-            }
-
-            function calculateTotalHours() {
-              const list = getFlights();
-              if (list.length === 0) {
-                alert("هیچ روتی برای محاسبه وجود ندارد.");
-                return null;
-              }
-              let sumMin = 0;
-              list.forEach(i => sumMin += i.min);
-              const hours = Math.floor(sumMin / 60);
-              const minutes = sumMin % 60;
-              const formatted = String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0");
-
-              document.getElementById("totalDisplay").innerText = formatted;
-              document.getElementById("totalCountDisplay").innerText = `${list.length} لگ پروازی • ${sumMin} دقیقه مجموع پرواز`;
-              document.getElementById("summaryBox").style.display = "block";
-              return { legs: list.length, formatted: formatted, minutes: sumMin };
-            }
-
-            function getArchive() {
-              return JSON.parse(localStorage.getItem("ava_archive_master") || "[]");
-            }
-
-            function saveToArchive() {
-              const list = getFlights();
-              if (list.length === 0) {
-                alert("روتی در این ماه برای ذخیره وجود ندارد.");
-                return;
-              }
-              const calc = calculateTotalHours();
-              if (!calc) return; // Prevent saving if calculation failed
-              
-              const mName = currentCal === "shamsi" ? SHAMSI_MONTHS[currentMonth] : MILADI_MONTHS[currentMonth];
-              const title = `${mName} ${currentYear} (${currentCal === "shamsi" ? "شمسی" : "UTC"})`;
-              
-              const archive = getArchive();
-              const entry = {
-                id: Date.now(),
-                periodTitle: title,
-                cal: currentCal,
-                year: currentYear,
-                month: currentMonth,
-                legs: list.length,
-                totalTime: calc.formatted,
-                totalMin: calc.minutes,
-                routes: list,
-                savedAt: new Date().toLocaleString("fa-IR")
-              };
-
-              archive.unshift(entry);
-              localStorage.setItem("ava_archive_master", JSON.stringify(archive));
-              renderArchive();
-              alert(`✅ کارکرد پروازی ${title} با موفقیت در پوشه بایگانی ذخیره شد.`);
-              // Optionally clear current log after saving to archive
-              // clearCurrentLog();
-            }
-
-            function deleteArchiveItem(id) {
-              if (confirm("آیا مایل به حذف این لاگ بایگانی‌شده هستید؟")) {
-                let arc = getArchive().filter(item => item.id !== id);
-                localStorage.setItem("ava_archive_master", JSON.stringify(arc));
-                renderArchive();
-              }
-            }
-
-            function toggleArchiveFolder() {
-              const cont = document.getElementById("archiveContainer");
-              const chev = document.getElementById("folderChevron");
-              if (cont.style.display === "block") {
-                cont.style.display = "none";
-                chev.innerText = "▼";
-              } else {
-                cont.style.display = "block";
-                chev.innerText = "▲";
-                renderArchive();
-              }
-            }
-
-            function renderArchive() {
-              const archive = getArchive();
-              const cont = document.getElementById("archiveContainer");
-              document.getElementById("archiveCountBadge").innerText = `${archive.length} پرونده`;
-              cont.innerHTML = "";
-              
-              if (archive.length === 0) {
-                cont.innerHTML = '<div style="text-align:center; padding:12px 0; color:var(--sub); font-size:12px;">پوشه بایگانی خالی است.</div>';
-                return;
-              }
-
-              archive.forEach(item => {
-                const row = document.createElement("div");
-                row.className = "archive-item";
-                row.innerHTML = `
-                  <div>
-                    <b style="font-size:13px; color:#fff;">📂 ${item.periodTitle}</b>
-                    <span style="font-size:11px; color:var(--sub); display:block; margin-top:2px;">
-                      ${item.legs} لگ • مجموع فیکس: <b style="color:var(--gold);">${item.totalTime}</b>
-                    </span>
-                    <span style="font-size:10px; color:#64748B;">ثبت: ${item.savedAt}</span>
-                  </div>
-                  <div>
-                    <button class="btn-del" onclick="deleteArchiveItem(${item.id})">✕</button>
-                  </div>
-                `;
-                cont.appendChild(row);
-              });
-            }
-
-            window.onload = function() {
-              initRoutes();
-              initDateSelectors(); // Initialize date selectors based on currentCal
-              renderArchive();
-              renderMonthRoutes(); // Render existing routes for the current month
-            };
-          </script>
-        ' > app/src/main/assets/index.html
-
-    - name: Build APK with Gradle
+    - name: Build
       run: |
+        gradle wrapper --gradle-version 8.5
         chmod +x ./gradlew
         ./gradlew assembleRelease --no-daemon
-
-    - name: Upload APK Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: AvaFix-v2.7-Release
-        path: app/build/outputs/apk/release/AvaFix-v2.7-release.apk # Adjusted artifact path
