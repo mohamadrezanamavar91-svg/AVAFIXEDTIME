@@ -1,117 +1,308 @@
-   mkdir -p app/src/main/assets
-   cp index.html app              repositories {
-                  google()
-                  mavenCentral()
-              }
-              dependencies {
-                  classpath 'com.android.tools.build:gradle:8.2.2'
-                  classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22'
-              }
-          }
-          allprojects {
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-          EOF
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AvaFix Logbook</title>
+    <style>
+        :root {
+            --bg-cockpit: #060911;
+            --panel-bg: rgba(16, 23, 41, 0.75);
+            --panel-border: rgba(56, 189, 248, 0.15);
+            --ava-red: #E11D48;
+            --ava-red-glow: rgba(225, 29, 72, 0.35);
+            --hud-green: #10B981;
+            --hud-green-glow: rgba(16, 185, 129, 0.25);
+            --hud-cyan: #38BDF8;
+            --text-primary: #F8FAFC;
+            --text-secondary: #94A3B8;
+            --input-bg: rgba(8, 12, 22, 0.85);
+        }
 
-          cat << 'EOF' > app/build.gradle
-          plugins {
-              id 'com.android.application'
-              id 'kotlin-android'
-          }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Vazirmatn, Tahoma, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-          android {
-              namespace 'com.avafix.logbook'
-              compileSdk 34
+        body {
+            background: radial-gradient(circle at 50% 0%, #111827 0%, #060911 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding-bottom: 40px;
+        }
 
-              defaultConfig {
-                  applicationId "com.avafix.logbook"
-                  minSdk 24
-                  targetSdk 34
-                  versionCode 35
-                  versionName "3.5-cockpit"
-              }
+        /* نوار بالای کابین */
+        header {
+            background: rgba(11, 17, 33, 0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(225, 29, 72, 0.4);
+            padding: 14px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
 
-              buildTypes {
-                  release {
-                      minifyEnabled false
-                      signingConfig signingConfigs.debug
-                  }
-              }
-          }
+        .brand-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 800;
+            font-size: 1.15rem;
+            letter-spacing: 0.5px;
+        }
 
-          dependencies {
-              implementation 'androidx.core:core-ktx:1.12.0'
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.11.0'
-              implementation 'androidx.webkit:webkit:1.10.0'
-          }
-          EOF
+        .badge-ava {
+            background: linear-gradient(135deg, #E11D48, #9F1239);
+            color: #FFF;
+            font-size: 0.7rem;
+            font-weight: 900;
+            padding: 3px 8px;
+            border-radius: 6px;
+            box-shadow: 0 0 10px var(--ava-red-glow);
+        }
 
-          cat << 'EOF' > app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.INTERNET" />
-              <application
-                  android:allowBackup="true"
-                  android:icon="@android:drawable/sym_def_app_icon"
-                  android:label="AvaFix Logbook"
-                  android:theme="@style/Theme.AppCompat.NoActionBar">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:configChanges="orientation|screenSize">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
+        .btn-history-top {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid var(--panel-border);
+            color: var(--hud-cyan);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
-          cat << 'EOF' > app/src/main/res/values/styles.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <style name="Theme.AppCompat.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-                  <item name="android:windowBackground">#0B0F19</item>
-                  <item name="android:statusBarColor">#0B0F19</item>
-                  <item name="android:navigationBarColor">#0B0F19</item>
-              </style>
-          </resources>
-          EOF
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px;
+        }
 
-          cat << 'EOF' > app/src/main/java/com/avafix/logbook/MainActivity.kt
-          package com.avafix.logbook
+        /* کارت‌های شیشه‌ای اویونیک */
+        .hud-card {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--panel-border);
+            border-radius: 16px;
+            padding: 18px;
+            margin-bottom: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+        }
 
-          import android.annotation.SuppressLint
-          import android.os.Bundle
-          import android.webkit.WebChromeClient
-          import android.webkit.WebSettings
-          import android.webkit.WebView
-          import android.webkit.WebViewClient
-          import androidx.appcompat.app.AppCompatActivity
+        .card-header-label {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-          class MainActivity : AppCompatActivity() {
-              @SuppressLint("SetJavaScriptEnabled")
-              override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
-                  val webView = WebView(this)
-                  setContentView(webView)
+        .date-selectors {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 14px;
+        }
 
-                  webView.settings.apply {
-                      javaScriptEnabled = true
-                      domStorageEnabled = true
-                      databaseEnabled = true
-                      allowFileAccess = true
-                      cacheMode = WebSettings.LOAD_DEFAULT
-                  }
+        select, input[type="text"] {
+            width: 100%;
+            background: var(--input-bg);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            color: #FFF;
+            padding: 11px 14px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
 
-                  webView.webChromeClient = WebChromeClient()
-                  webView.webViewClient = WebViewClient()
-                  webView.loadUrl("file:///android_asset/index.html")
-              }
-          }
-          EOF
+        select:focus, input[type="text"]:focus {
+            border-color: var(--hud-cyan);
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
+        }
+
+        /* باکس نمایشگر ساعات پرواز */
+        .digital-gauge {
+            background: rgba(4, 7, 15, 0.9);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 12px;
+            padding: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .gauge-time {
+            font-family: "Courier New", Courier, monospace;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--hud-green);
+            text-shadow: 0 0 12px var(--hud-green-glow);
+            letter-spacing: 2px;
+            direction: ltr;
+        }
+
+        .gauge-unit {
+            font-size: 0.75rem;
+            color: #F43F5E;
+            margin-right: 6px;
+        }
+
+        /* ساب باکس معادل میلادی */
+        .miladi-pill {
+            background: rgba(14, 165, 233, 0.08);
+            border: 1px solid rgba(14, 165, 233, 0.25);
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            color: var(--hud-cyan);
+            text-align: center;
+            margin-bottom: 14px;
+            direction: ltr;
+            font-family: monospace;
+        }
+
+        /* دکمه افزودن لگ */
+        .btn-add-leg {
+            width: 100%;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px dashed rgba(56, 189, 248, 0.4);
+            color: var(--hud-cyan);
+            padding: 13px;
+            border-radius: 10px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-add-leg:active {
+            background: rgba(56, 189, 248, 0.15);
+            transform: scale(0.99);
+        }
+
+        /* دکمه ذخیره در پرونده ماه */
+        .btn-save-duty {
+            width: 100%;
+            background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%);
+            border: none;
+            color: #FFF;
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 0.96rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 14px;
+            box-shadow: 0 4px 16px var(--ava-red-glow);
+            transition: all 0.2s ease;
+        }
+
+        .btn-save-duty:active {
+            filter: brightness(0.9);
+            transform: scale(0.99);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <button class="btn-history-top">سوابق ماهانه 📁</button>
+        <div class="brand-title">
+            <span>AvaFix Logbook</span>
+            <span class="badge-ava">AVA</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- کارت انتخاب دوره و سرجمع ساعات ماه -->
+        <div class="hud-card">
+            <div class="card-header-label">
+                <span>انتخاب دوره جهت محاسبه و بررسی:</span>
+            </div>
+            <div class="date-selectors">
+                <select id="monthSelect">
+                    <option value="6">شهریور</option>
+                    <option value="7">مهر</option>
+                    <option value="8">آبان</option>
+                </select>
+                <select id="yearSelect">
+                    <option value="1405">1405 شمسی</option>
+                    <option value="1404">1404 شمسی</option>
+                </select>
+            </div>
+
+            <div class="digital-gauge">
+                <div>
+                    <div style="font-size: 0.85rem; font-weight: 700; color: #E2E8F0;">مجموع پروازهای شهریور 1405:</div>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">دوره میلادی: Aug 2026 / Sep 2026</div>
+                </div>
+                <div style="display: flex; align-items: baseline;">
+                    <span class="gauge-unit">ساعت</span>
+                    <span class="gauge-time" id="monthlyTotalDisplay">00:00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- کارت ثبت پرواز جدید -->
+        <div class="hud-card">
+            <div class="card-header-label">
+                <span style="color: #FFF; font-weight: 700; font-size: 0.95rem;">ثبت پرواز جدید</span>
+                <span style="font-size: 0.75rem; color: var(--hud-cyan);" id="selectedLegsCounter">۰ لگ انتخاب‌شده</span>
+            </div>
+
+            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 6px;">تاریخ پرواز (شمسی و میلادی):</div>
+            <div class="date-selectors" style="grid-template-columns: 2fr 1fr 1fr; margin-bottom: 8px;">
+                <select id="dutyYear"><option>1405 شمسی</option></select>
+                <select id="dutyMonth"><option>شهریور</option></select>
+                <select id="dutyDay"><option>1</option></select>
+            </div>
+
+            <div class="miladi-pill">
+                (23 Aug 2026) معادل میلادی: 2026-08-23
+            </div>
+
+            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 6px;">انتخاب مسیر (FIXED TIME):</div>
+            <select id="routePicker">
+                <option value="02:45">MHD ➔ KSH (مشهد - کرمانشاه) | ۰۲:۴۵</option>
+                <option value="01:15">THR ➔ MHD (تهران - مشهد) | ۰۱:۱۵</option>
+                <option value="01:10">THR ➔ SYZ (تهران - شیراز) | ۰۱:۱۰</option>
+                <option value="01:40">THR ➔ KIH (تهران - کیش) | ۰۱:۴۰</option>
+            </select>
+
+            <button class="btn-add-leg">
+                <span>➕</span> اضافه کردن این لگ
+            </button>
+
+            <!-- مجموع ساعات این وظیفه -->
+            <div class="digital-gauge" style="margin-top: 14px;">
+                <span style="font-size: 0.85rem; color: #CBD5E1;">مجموع ساعات این وظیفه:</span>
+                <span class="gauge-time" id="dutyTotalDisplay">00:00</span>
+            </div>
+
+            <button class="btn-save-duty">
+                <span>💾</span> ذخیره در پرونده ماه
+            </button>
+        </div>
+    </div>
+
+</body>
+</html>
