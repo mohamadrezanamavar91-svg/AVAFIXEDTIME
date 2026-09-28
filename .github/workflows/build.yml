@@ -10,6 +10,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
@@ -22,34 +25,94 @@ jobs:
         python-version: '3.11'
 
     - name: Install Pillow
-      run: pip install pillow
+      run: pip install --upgrade Pillow
 
-    - name: Setup Project Structure & Assets
+    - name: Create Directories and Generate Icon
       run: |
-        mkdir -p app/src/main/java/com/avafix/logbook
         mkdir -p app/src/main/assets
-        mkdir -p app/src/main/res/layout
-        mkdir -p app/src/main/res/values
         mkdir -p app/src/main/res/mipmap-hdpi
         mkdir -p app/src/main/res/mipmap-xhdpi
         mkdir -p app/src/main/res/mipmap-xxhdpi
         mkdir -p app/src/main/res/mipmap-xxxhdpi
+        mkdir -p app/src/main/java/com/avafix/logbook
+        mkdir -p app/src/main/res/layout
+        mkdir -p app/src/main/res/values
 
-        # 1. settings.gradle
-        cat << 'EOF' > settings.gradle
-        rootProject.name = "AvaFix"
-        include ':app'
-        EOF
+        echo "Generating Ava Tail Icon..."
+        echo '
+import math
+from PIL import Image, ImageDraw
 
-        # 2. build.gradle (root)
-        cat << 'EOF' > build.gradle
+def generate_ava_icon(size):
+    img = Image.new("RGBA", (size, size), (9, 11, 16, 255))
+    draw = ImageDraw.Draw(img)
+    
+    r = size * 0.44
+    cx, cy = size * 0.5, size * 0.5
+    draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(211, 26, 43, 255))
+    
+    steps = 360
+    heart_scale = size * 0.016
+    heart_cx = cx
+    heart_cy = cy - size * 0.02
+    
+    for i in range(steps):
+        t = (2 * math.pi * i) / steps
+        x = 16 * (math.sin(t) ** 3)
+        y = -(13 * math.cos(t) - 5 * math.cos(2*t) - 2 * math.cos(3*t) - math.cos(4*t))
+        px = heart_cx + x * heart_scale
+        py = heart_cy + y * heart_scale
+        rad = (size * 0.012) + (math.sin(t*3) * (size * 0.005))
+        draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 245))
+
+    dots = [
+        (0.72, 0.65, 0.038),
+        (0.78, 0.73, 0.030),
+        (0.68, 0.77, 0.026),
+        (0.60, 0.82, 0.022),
+        (0.52, 0.85, 0.018),
+        (0.82, 0.81, 0.020),
+        (0.44, 0.88, 0.014)
+    ]
+    for dx, dy, dr in dots:
+        px = size * dx
+        py = size * dy
+        rad = size * dr
+        draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 230))
+
+    return img
+
+sizes = {
+    "app/src/main/res/mipmap-hdpi/ic_launcher.png": 72,
+    "app/src/main/res/mipmap-xhdpi/ic_launcher.png": 96,
+    "app/src/main/res/mipmap-xxhdpi/ic_launcher.png": 144,
+    "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": 192
+}
+
+for path, s in sizes.items():
+    icon = generate_ava_icon(s)
+    icon.save(path, "PNG")
+' > make_icon.py
+python make_icon.py
+echo "Icon generation complete."
+        '
+
+    - name: Create Gradle Wrapper
+      run: |
+        gradle wrapper --gradle-version 8.5
+
+    - name: Create Android Project Files
+      run: |
+        echo "rootProject.name = \"AvaFix\"\ninclude ':app'" > settings.gradle
+
+        echo '
         buildscript {
             repositories {
                 google()
                 mavenCentral()
             }
             dependencies {
-                classpath 'com.android.tools.build:gradle:8.2.2'
+                classpath "com.android.tools.build:gradle:8.2.2"
             }
         }
         allprojects {
@@ -58,15 +121,14 @@ jobs:
                 mavenCentral()
             }
         }
-        EOF
+        ' > build.gradle
 
-        # 3. app/build.gradle
-        cat << 'EOF' > app/build.gradle
+        echo '
         plugins {
-            id 'com.android.application'
+            id "com.android.application"
         }
         android {
-            namespace 'com.avafix.logbook'
+            namespace "com.avafix.logbook"
             compileSdk 34
             defaultConfig {
                 applicationId "com.avafix.logbook"
@@ -81,78 +143,27 @@ jobs:
                     signingConfig signingConfigs.debug
                 }
             }
+            // Add this block to handle resources correctly
+            applicationVariants.all { variant ->
+                variant.outputs.all {
+                    def version = variant.versionName
+                    def apkName = "AvaFix-v${version}-release.apk"
+                    outputFileName = apkName
+                }
+            }
         }
-        EOF
+        ' > app/build.gradle
 
-        # 4. Python script to generate Ava Tail Icon
-        cat << 'EOF' > make_icon.py
-        import math
-        from PIL import Image, ImageDraw
-
-        def generate_ava_icon(size):
-            img = Image.new("RGBA", (size, size), (9, 11, 16, 255))
-            draw = ImageDraw.Draw(img)
-            
-            r = size * 0.44
-            cx, cy = size * 0.5, size * 0.5
-            draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(211, 26, 43, 255))
-            
-            steps = 360
-            heart_scale = size * 0.016
-            heart_cx = cx
-            heart_cy = cy - size * 0.02
-            
-            for i in range(steps):
-                t = (2 * math.pi * i) / steps
-                x = 16 * (math.sin(t) ** 3)
-                y = -(13 * math.cos(t) - 5 * math.cos(2*t) - 2 * math.cos(3*t) - math.cos(4*t))
-                px = heart_cx + x * heart_scale
-                py = heart_cy + y * heart_scale
-                rad = (size * 0.012) + (math.sin(t*3) * (size * 0.005))
-                draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 245))
-
-            dots = [
-                (0.72, 0.65, 0.038),
-                (0.78, 0.73, 0.030),
-                (0.68, 0.77, 0.026),
-                (0.60, 0.82, 0.022),
-                (0.52, 0.85, 0.018),
-                (0.82, 0.81, 0.020),
-                (0.44, 0.88, 0.014)
-            ]
-            for dx, dy, dr in dots:
-                px = size * dx
-                py = size * dy
-                rad = size * dr
-                draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 230))
-
-            return img
-
-        sizes = {
-            "app/src/main/res/mipmap-hdpi/ic_launcher.png": 72,
-            "app/src/main/res/mipmap-xhdpi/ic_launcher.png": 96,
-            "app/src/main/res/mipmap-xxhdpi/ic_launcher.png": 144,
-            "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": 192
-        }
-
-        for path, s in sizes.items():
-            icon = generate_ava_icon(s)
-            icon.save(path, "PNG")
-        EOF
-        python make_icon.py
-
-        # 5. styles.xml
-        cat << 'EOF' > app/src/main/res/values/styles.xml
+        echo '
         <?xml version="1.0" encoding="utf-8"?>
         <resources>
             <style name="AppTheme" parent="android:Theme.NoTitleBar.Fullscreen">
                 <item name="android:windowBackground">@android:color/black</item>
             </style>
         </resources>
-        EOF
+        ' > app/src/main/res/values/styles.xml
 
-        # 6. activity_main.xml
-        cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+        echo '
         <?xml version="1.0" encoding="utf-8"?>
         <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
@@ -162,10 +173,9 @@ jobs:
                 android:layout_width="match_parent"
                 android:layout_height="match_parent" />
         </RelativeLayout>
-        EOF
+        ' > app/src/main/res/layout/activity_main.xml
 
-        # 7. AndroidManifest.xml
-        cat << 'EOF' > app/src/main/AndroidManifest.xml
+        echo '
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-permission android:name="android.permission.INTERNET" />
@@ -187,10 +197,9 @@ jobs:
                 </activity>
             </application>
         </manifest>
-        EOF
+        ' > app/src/main/AndroidManifest.xml
 
-        # 8. MainActivity.java
-        cat << 'EOF' > app/src/main/java/com/avafix/logbook/MainActivity.java
+        echo '
         package com.avafix.logbook;
 
         import android.app.Activity;
@@ -214,10 +223,10 @@ jobs:
                 webView.loadUrl("file:///android_asset/index.html");
             }
         }
-        EOF
+        ' > app/src/main/java/com/avafix/logbook/MainActivity.java
 
-        # 9. HTML App File (v2.7 with Collapsible Archive Drawer & Delete)
-        cat << 'EOF' > app/src/main/assets/index.html
+        # Create index.html directly in assets directory
+        echo '
         <!DOCTYPE html>
         <html lang="fa" dir="rtl">
         <head>
@@ -241,16 +250,6 @@ jobs:
             
             .header-bar { text-align: center; margin-bottom: 12px; }
             .badge-top { display: inline-flex; align-items: center; background: rgba(211,26,43,0.15); border: 1px solid rgba(211,26,43,0.35); padding: 3px 12px; border-radius: 99px; color: var(--red); font-size: 11px; font-weight: 800; letter-spacing: 1px; }
-            h1 { font-size: 20px; font-weight: 900; margin-top: 4px; letter-spacing:text: #F3F4F6;
-              --sub: #94A3B8;
-              --gold: #F59E0B;
-              --ok: #10B981;
-            }
-            * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-            body { background: var(--bg); color: var(--text); padding: 14px 12px 60px; min-height: 100vh; }
-            
-            .header-bar { text-align: center; margin-bottom: 12px; }
-            .badge-top { display: inline-flex; align-items: center; background: rgba(211,26,43,0.15); border: 1px solid rgba(211,26,43,0.35); padding: 3px 12px; border-radius: 99px; color: var(--red); font-size: 11px; font-weight: 800; letter-spacing: 1px; }
             h1 { font-size: 20px; font-weight: 900; margin-top: 4px; letter-spacing: 0.5px; }
 
             .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
@@ -258,7 +257,7 @@ jobs:
             
             label { display: block; font-size: 11px; color: var(--sub); margin: 6px 0 4px; font-weight: 700; text-transform: uppercase; }
             select, input {
-              width: 100%; background: #0A0C13; border:  border: 1px solid #333F56; color: #FFF; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; }
+              width: 100%; background: #0A0C13; border: 1px solid #333F56; color: #FFF; padding: 12px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; }
             .btn-sum { width: 100%; margin-top: 10px; background: var(--red); border: none; color: #fff; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 900; cursor: pointer; }
             .btn-save { width: 100%; margin-top: 8px; background: #1B2936; border: 1px solid #28543E; color: var(--ok); padding: 11px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
 
@@ -279,6 +278,16 @@ jobs:
             .tot-title { font-size: 11px; color: var(--sub); font-weight: 700; }
             .tot-val { font-size: 32px; font-weight: 900; color: var(--ok); margin: 4px 0; font-variant-numeric: tabular-nums; direction: ltr; }
             .tot-sub { font-size: 11px; color: var(--sub); }
+
+            /* Calendar Styles */
+            .cal-selector-bar { display: flex; gap: 8px; margin-bottom: 12px; }
+            .cal-btn { background: none; border: 1px solid var(--border); color: var(--text); padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s ease; }
+            .cal-btn.active { background: var(--red); border-color: var(--red); color: #fff; }
+            .cal-btn:not(.active):hover { background: rgba(211, 26, 43, 0.1); }
+            .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .btn-primary { width: 100%; margin-top: 12px; background: var(--red); border: none; color: #fff; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 900; cursor: pointer; }
+            .btn-primary:hover { filter: brightness(1.1); }
+            .input-en { font-family: monospace !important; }
           </style>
         </head>
         <body>
@@ -308,7 +317,9 @@ jobs:
 
           <div class="card accent">
             <label style="color:var(--gold); font-size:12px;">FIXED TIME</label>
-            <select id="routeSelect" onchange="onRouteSelected()"></select>
+            <select id="routeSelect" onchange="onRouteSelected()">
+              <option value="-1">-- جهت انتخاب روت لمس نمایید --</option>
+            </select>
 
             <div class="grid-2">
               <div>
@@ -424,7 +435,7 @@ jobs:
             const MILADI_MONTHS = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
 
             let currentCal = localStorage.getItem("ava_cal") || "shamsi";
-            let currentYear = localStorage.getItem("ava_year") || "1405";
+            let currentYear = localStorage.getItem("ava_year") || (currentCal === "shamsi" ? "1405" : "2026");
             let currentMonth = localStorage.getItem("ava_month") || "0";
 
             function setCalType(type) {
@@ -442,35 +453,23 @@ jobs:
               ySel.innerHTML = "";
               mSel.innerHTML = "";
 
-              if (currentCal === "shamsi") {
-                for (let y = 1405; y <= 1415; y++) {
-                  const opt = document.createElement("option");
-                  opt.value = y;
-                  opt.textContent = `سال ${y}`;
-                  ySel.appendChild(opt);
-                }
-                SHAMSI_MONTHS.forEach((m, idx) => {
-                  const opt = document.createElement("option");
-                  opt.value = idx;
-                  opt.textContent = m;
-                  mSel.appendChild(opt);
-                });
-                if (!currentYear.startsWith("14")) currentYear = "1405";
-              } else {
-                for (let y = 2026; y <= 2036; y++) {
-                  const opt = document.createElement("option");
-                  opt.value = y;
-                  opt.textContent = `YEAR ${y}`;
-                  ySel.appendChild(opt);
-                }
-                MILADI_MONTHS.forEach((m, idx) => {
-                  const opt = document.createElement("option");
-                  opt.value = idx;
-                  opt.textContent = m;
-                  mSel.appendChild(opt);
-                });
-                if (!currentYear.startsWith("20")) currentYear = "2026";
+              let startYear = currentCal === "shamsi" ? 1405 : 2026;
+              let endYear = currentCal === "shamsi" ? 1415 : 2036;
+
+              for (let y = startYear; y <= endYear; y++) {
+                const opt = document.createElement("option");
+                opt.value = y;
+                opt.textContent = currentCal === "shamsi" ? `سال ${y}` : `YEAR ${y}`;
+                ySel.appendChild(opt);
               }
+
+              const months = currentCal === "shamsi" ? SHAMSI_MONTHS : MILADI_MONTHS;
+              months.forEach((m, idx) => {
+                const opt = document.createElement("option");
+                opt.value = idx;
+                opt.textContent = m;
+                mSel.appendChild(opt);
+              });
 
               ySel.value = currentYear;
               mSel.value = currentMonth;
@@ -498,7 +497,10 @@ jobs:
 
             function initRoutes() {
               const sel = document.getElementById("routeSelect");
-              sel.innerHTML = '<option value="-1">-- جهت انتخاب روت لمس نمایید --</option>';
+              // Ensure the default option is always present and selected first
+              if (sel.options.length === 0 || sel.options[0].value !== "-1") {
+                  sel.innerHTML = '<option value="-1">-- جهت انتخاب روت لمس نمایید --</option>';
+              }
               AVA_ROUTES.forEach((r, idx) => {
                 const opt = document.createElement("option");
                 opt.value = idx;
@@ -509,7 +511,11 @@ jobs:
 
             function onRouteSelected() {
               const sel = document.getElementById("routeSelect");
-              if (sel.value < 0) return;
+              if (sel.value < 0) {
+                 document.getElementById("routeCodeInput").value = "";
+                 document.getElementById("fixTimeInput").value = "";
+                 return;
+              }
               const r = AVA_ROUTES[sel.value];
               document.getElementById("routeCodeInput").value = r.code;
               document.getElementById("fixTimeInput").value = r.dur;
@@ -546,6 +552,10 @@ jobs:
               saveFlights(list);
               renderMonthRoutes();
               document.getElementById("summaryBox").style.display = "none";
+              // Reset dropdown and inputs after adding
+              document.getElementById("routeSelect").value = "-1";
+              document.getElementById("routeCodeInput").value = "";
+              document.getElementById("fixTimeInput").value = "";
             }
 
             function deleteFlight(id) {
@@ -604,4 +614,114 @@ jobs:
               document.getElementById("totalDisplay").innerText = formatted;
               document.getElementById("totalCountDisplay").innerText = `${list.length} لگ پروازی • ${sumMin} دقیقه مجموع پرواز`;
               document.getElementById("summaryBox").style.display = "block";
-              return {
+              return { legs: list.length, formatted: formatted, minutes: sumMin };
+            }
+
+            function getArchive() {
+              return JSON.parse(localStorage.getItem("ava_archive_master") || "[]");
+            }
+
+            function saveToArchive() {
+              const list = getFlights();
+              if (list.length === 0) {
+                alert("روتی در این ماه برای ذخیره وجود ندارد.");
+                return;
+              }
+              const calc = calculateTotalHours();
+              if (!calc) return; // Prevent saving if calculation failed
+              
+              const mName = currentCal === "shamsi" ? SHAMSI_MONTHS[currentMonth] : MILADI_MONTHS[currentMonth];
+              const title = `${mName} ${currentYear} (${currentCal === "shamsi" ? "شمسی" : "UTC"})`;
+              
+              const archive = getArchive();
+              const entry = {
+                id: Date.now(),
+                periodTitle: title,
+                cal: currentCal,
+                year: currentYear,
+                month: currentMonth,
+                legs: list.length,
+                totalTime: calc.formatted,
+                totalMin: calc.minutes,
+                routes: list,
+                savedAt: new Date().toLocaleString("fa-IR")
+              };
+
+              archive.unshift(entry);
+              localStorage.setItem("ava_archive_master", JSON.stringify(archive));
+              renderArchive();
+              alert(`✅ کارکرد پروازی ${title} با موفقیت در پوشه بایگانی ذخیره شد.`);
+              // Optionally clear current log after saving to archive
+              // clearCurrentLog();
+            }
+
+            function deleteArchiveItem(id) {
+              if (confirm("آیا مایل به حذف این لاگ بایگانی‌شده هستید؟")) {
+                let arc = getArchive().filter(item => item.id !== id);
+                localStorage.setItem("ava_archive_master", JSON.stringify(arc));
+                renderArchive();
+              }
+            }
+
+            function toggleArchiveFolder() {
+              const cont = document.getElementById("archiveContainer");
+              const chev = document.getElementById("folderChevron");
+              if (cont.style.display === "block") {
+                cont.style.display = "none";
+                chev.innerText = "▼";
+              } else {
+                cont.style.display = "block";
+                chev.innerText = "▲";
+                renderArchive();
+              }
+            }
+
+            function renderArchive() {
+              const archive = getArchive();
+              const cont = document.getElementById("archiveContainer");
+              document.getElementById("archiveCountBadge").innerText = `${archive.length} پرونده`;
+              cont.innerHTML = "";
+              
+              if (archive.length === 0) {
+                cont.innerHTML = '<div style="text-align:center; padding:12px 0; color:var(--sub); font-size:12px;">پوشه بایگانی خالی است.</div>';
+                return;
+              }
+
+              archive.forEach(item => {
+                const row = document.createElement("div");
+                row.className = "archive-item";
+                row.innerHTML = `
+                  <div>
+                    <b style="font-size:13px; color:#fff;">📂 ${item.periodTitle}</b>
+                    <span style="font-size:11px; color:var(--sub); display:block; margin-top:2px;">
+                      ${item.legs} لگ • مجموع فیکس: <b style="color:var(--gold);">${item.totalTime}</b>
+                    </span>
+                    <span style="font-size:10px; color:#64748B;">ثبت: ${item.savedAt}</span>
+                  </div>
+                  <div>
+                    <button class="btn-del" onclick="deleteArchiveItem(${item.id})">✕</button>
+                  </div>
+                `;
+                cont.appendChild(row);
+              });
+            }
+
+            window.onload = function() {
+              initRoutes();
+              initDateSelectors(); // Initialize date selectors based on currentCal
+              renderArchive();
+              renderMonthRoutes(); // Render existing routes for the current month
+            };
+          </script>
+        ' > app/src/main/assets/index.html
+
+    - name: Build APK with Gradle
+      run: |
+        chmod +x ./gradlew
+        ./gradlew assembleRelease --no-daemon
+
+    - name: Upload APK Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: AvaFix-v2.7-Release
+        path: app/build/outputs/apk/release/AvaFix-v2.7-release.apk # Adjusted artifact path
