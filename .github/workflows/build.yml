@@ -16,14 +16,12 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Setup Android Project & UI
+    - name: Setup Android Project & Advanced Cockpit UI
       run: |
         mkdir -p app/src/main/java/com/avafix/logbook
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/values
         mkdir -p app/src/main/res/drawable
-        mkdir -p app/src/main/res/mipmap-anydpi-v26
-        mkdir -p app/src/main/res/mipmap-xxxhdpi
 
         # Settings Gradle
         cat << 'EOF' > settings.gradle
@@ -62,8 +60,8 @@ jobs:
                 applicationId "com.avafix.logbook"
                 minSdk 24
                 targetSdk 34
-                versionCode 2
-                versionName "2.0"
+                versionCode 3
+                versionName "2.1"
             }
             buildTypes {
                 release {
@@ -73,12 +71,12 @@ jobs:
         }
         EOF
 
-        # Strings & Colors
+        # Colors & Styles
         cat << 'EOF' > app/src/main/res/values/colors.xml
         <?xml version="1.0" encoding="utf-8"?>
         <resources>
             <color name="ava_red">#D31A2B</color>
-            <color name="ava_dark">#121417</color>
+            <color name="ava_dark">#0F1115</color>
         </resources>
         EOF
 
@@ -86,12 +84,12 @@ jobs:
         <?xml version="1.0" encoding="utf-8"?>
         <resources>
             <style name="Theme.AvaFix" parent="android:Theme.Material.NoActionBar">
-                <item name="android:statusBarColor">#121417</item>
+                <item name="android:statusBarColor">#0F1115</item>
             </style>
         </resources>
         EOF
 
-        # Android Manifest with Brand Icon
+        # Android Manifest
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -103,6 +101,7 @@ jobs:
                 android:theme="@style/Theme.AvaFix">
                 <activity
                     android:name=".MainActivity"
+                    android:windowSoftInputMode="adjustResize"
                     android:exported="true">
                     <intent-filter>
                         <action android:name="android.intent.action.MAIN" />
@@ -113,7 +112,7 @@ jobs:
         </manifest>
         EOF
 
-        # Vector Icon for Ava Airlines
+        # Ava App Vector Icon
         cat << 'EOF' > app/src/main/res/drawable/ava_icon.xml
         <vector xmlns:android="http://schemas.android.com/apk/res/android"
             android:width="108dp"
@@ -141,7 +140,7 @@ jobs:
             android:layout_height="match_parent" />
         EOF
 
-        # MainActivity with Minimalist Aviation UI
+        # MainActivity with Live Calculator & Ava Tail Watermark
         cat << 'EOF' > app/src/main/java/com/avafix/logbook/MainActivity.java
         package com.avafix.logbook;
 
@@ -164,30 +163,62 @@ jobs:
                 String html = "<!DOCTYPE html><html lang='fa' dir='rtl'><head><meta charset='utf-8'>" +
                     "<meta name='viewport' content='width=device-width, initial-scale=1.0, user-scalable=no'>" +
                     "<style>" +
-                    "  :root { --ava-red: #D31A2B; --bg: #0F1115; --card: #181B22; --border: #262B35; --text: #FFFFFF; --sub: #8E95A5; }" +
+                    "  :root { --ava-red: #D31A2B; --bg: #0C0E12; --card: #15181F; --border: #232834; --text: #FFFFFF; --sub: #8B93A7; --accent: #34D399; }" +
                     "  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }" +
-                    "  body { background: var(--bg); color: var(--text); padding: 24px 16px; min-height: 100vh; }" +
-                    "  .header { text-align: center; margin-bottom: 28px; }" +
-                    "  .brand-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(211,26,43,0.12); border: 1px solid rgba(211,26,43,0.3); padding: 6px 16px; border-radius: 99px; color: var(--ava-red); font-size: 13px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 12px; }" +
-                    "  .title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }" +
-                    "  .subtitle { font-size: 13px; color: var(--sub); margin-top: 4px; }" +
-                    "  .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; margin-bottom: 16px; position: relative; overflow: hidden; }" +
+                    "  body { background: var(--bg); color: var(--text); padding: 20px 16px 40px; min-height: 100vh; }" +
+                    "  .header { text-align: center; margin-bottom: 22px; }" +
+                    "  .brand-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(211,26,43,0.15); border: 1px solid rgba(211,26,43,0.35); padding: 5px 14px; border-radius: 99px; color: var(--ava-red); font-size: 12px; font-weight: 800; letter-spacing: 1.5px; margin-bottom: 8px; }" +
+                    "  .title { font-size: 26px; font-weight: 900; letter-spacing: -0.5px; }" +
+                    "  .subtitle { font-size: 13px; color: var(--sub); margin-top: 3px; }" +
+                    "  .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 18px; margin-bottom: 16px; position: relative; overflow: hidden; }" +
                     "  .card::before { content: ''; position: absolute; top: 0; right: 0; width: 4px; height: 100%; background: var(--ava-red); }" +
-                    "  .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }" +
-                    "  .route { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }" +
+                    "  .card-watermark { position: absolute; left: -15px; bottom: -20px; width: 140px; height: 140px; opacity: 0.07; pointer-events: none; transform: rotate(-10deg); }" +
+                    "  .calc-card { border: 1px solid rgba(211,26,43,0.4); background: linear-gradient(145deg, #171B24 0%, #12141B 100%); }" +
+                    "  .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; position: relative; z-index: 1; }" +
+                    "  .route { font-size: 19px; font-weight: 800; }" +
                     "  .tag { background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 8px; font-size: 12px; color: var(--sub); }" +
-                    "  .time-box { display: flex; align-items: baseline; gap: 8px; }" +
-                    "  .time-val { font-size: 32px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }" +
-                    "  .time-unit { font-size: 14px; color: var(--ava-red); font-weight: 600; }" +
-                    "  .detail { margin-top: 10px; font-size: 13px; color: var(--sub); display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; }" +
-                    "  .status-bar { text-align: center; margin-top: 24px; padding: 12px; font-size: 12px; color: #4E5565; }" +
+                    "  .time-box { display: flex; align-items: baseline; gap: 8px; position: relative; z-index: 1; }" +
+                    "  .time-val { font-size: 32px; font-weight: 900; color: #fff; font-variant-numeric: tabular-nums; }" +
+                    "  .time-unit { font-size: 13px; color: var(--ava-red); font-weight: 600; }" +
+                    "  .detail { margin-top: 12px; font-size: 12px; color: var(--sub); display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; position: relative; z-index: 1; }" +
+                    "  .calc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; position: relative; z-index: 1; }" +
+                    "  .input-group label { display: block; font-size: 11px; color: var(--sub); margin-bottom: 6px; font-weight: 600; }" +
+                    "  .input-group input { width: 100%; background: #0A0C10; border: 1px solid #2B313F; border-radius: 10px; color: #fff; padding: 10px; font-size: 16px; font-weight: 700; text-align: center; direction: ltr; }" +
+                    "  .calc-res-box { margin-top: 14px; background: rgba(0,0,0,0.3); border-radius: 12px; padding: 12px; text-align: center; border: 1px dashed rgba(255,255,255,0.1); position: relative; z-index: 1; }" +
+                    "  .calc-res-val { font-size: 28px; font-weight: 900; color: var(--accent); font-variant-numeric: tabular-nums; }" +
+                    "  .status-bar { text-align: center; margin-top: 24px; padding: 10px; font-size: 12px; color: #4F5668; }" +
                     "</style></head><body>" +
                     "  <div class='header'>" +
                     "    <div class='brand-badge'>✈ AVA AIRLINES</div>" +
                     "    <h1 class='title'>AvaFix Logbook</h1>" +
-                    "    <p class='subtitle'>سیستم محاسبه ساعات پروازی کابین</p>" +
+                    "    <p class='subtitle'>سیستم هوشمند محاسبه بلاک‌تایم و فیکس کابین</p>" +
                     "  </div>" +
+                    "  <!-- Calculator Card -->" +
+                    "  <div class='card calc-card'>" +
+                    "    <svg class='card-watermark' viewBox='0 0 100 100'><path fill='#fff' d='M50,85 C50,85 10,60 10,35 C10,20 22,10 37,10 C44,10 48,15 50,18 C52,15 56,10 63,10 C78,10 90,20 90,35 C90,60 50,85 50,85 Z'/></svg>" +
+                    "    <div class='card-top'>" +
+                    "      <div class='route' style='color:var(--ava-red);'>محاسبه‌گر Block Time</div>" +
+                    "      <div class='tag'>Chocks Off / On</div>" +
+                    "    </div>" +
+                    "    <div class='calc-grid'>" +
+                    "      <div class='input-group'>" +
+                    "        <label>OFF-BLOCK (چاکس آف)</label>" +
+                    "        <input type='time' id='offTime' value='08:15' oninput='calculateBlock()'>" +
+                    "      </div>" +
+                    "      <div class='input-group'>" +
+                    "        <label>ON-BLOCK (چاکس آن)</label>" +
+                    "        <input type='time' id='onTime' value='10:45' oninput='calculateBlock()'>" +
+                    "      </div>" +
+                    "    </div>" +
+                    "    <div class='calc-res-box'>" +
+                    "      <div style='font-size:12px; color:var(--sub); margin-bottom:4px;'>مدت زمان عملیاتی پرواز:</div>" +
+                    "      <div class='calc-res-val' id='calcResult'>۱۵۰ دقیقه</div>" +
+                    "      <div style='font-size:12px; color:var(--sub); margin-top:2px;' id='calcDetail'>۲ ساعت و ۳۰ دقیقه</div>" +
+                    "    </div>" +
+                    "  </div>" +
+                    "  <!-- Fixed Route 1 -->" +
                     "  <div class='card'>" +
+                    "    <svg class='card-watermark' viewBox='0 0 100 100'><path fill='#fff' d='M50,85 C50,85 10,60 10,35 C10,20 22,10 37,10 C44,10 48,15 50,18 C52,15 56,10 63,10 C78,10 90,20 90,35 C90,60 50,85 50,85 Z'/></svg>" +
                     "    <div class='card-top'>" +
                     "      <div class='route'>MHD ⇄ RAS</div>" +
                     "      <div class='tag'>مشهد - رامسر</div>" +
@@ -196,9 +227,11 @@ jobs:
                     "      <span class='time-val'>250</span>" +
                     "      <span class='time-unit'>دقیقه (۴ ساعت و ۱۰ دقیقه)</span>" +
                     "    </div>" +
-                    "    <div class='detail'><span>وضعیت روت:</span><span style='color:#34D399'>فیکس مصوب</span></div>" +
+                    "    <div class='detail'><span>وضعیت روت:</span><span style='color:var(--accent); font-weight:600;'>فیکس مصوب</span></div>" +
                     "  </div>" +
+                    "  <!-- Fixed Route 2 -->" +
                     "  <div class='card'>" +
+                    "    <svg class='card-watermark' viewBox='0 0 100 100'><path fill='#fff' d='M50,85 C50,85 10,60 10,35 C10,20 22,10 37,10 C44,10 48,15 50,18 C52,15 56,10 63,10 C78,10 90,20 90,35 C90,60 50,85 50,85 Z'/></svg>" +
                     "    <div class='card-top'>" +
                     "      <div class='route'>MHD ⇄ BGW</div>" +
                     "      <div class='tag'>مشهد - بغداد</div>" +
@@ -207,9 +240,27 @@ jobs:
                     "      <span class='time-val'>375</span>" +
                     "      <span class='time-unit'>دقیقه (۶ ساعت و ۱۵ دقیقه)</span>" +
                     "    </div>" +
-                    "    <div class='detail'><span>وضعیت روت:</span><span style='color:#34D399'>فیکس بین‌المللی</span></div>" +
+                    "    <div class='detail'><span>وضعیت روت:</span><span style='color:var(--accent); font-weight:600;'>فیکس بین‌المللی</span></div>" +
                     "  </div>" +
                     "  <div class='status-bar'>EP-RBD Cabin Edition • Ready for Duty</div>" +
+                    "  <script>" +
+                    "    function calculateBlock() {" +
+                    "      const t1 = document.getElementById('offTime').value;" +
+                    "      const t2 = document.getElementById('onTime').value;" +
+                    "      if (!t1 || !t2) return;" +
+                    "      const [h1, m1] = t1.split(':').map(Number);" +
+                    "      const [h2, m2] = t2.split(':').map(Number);" +
+                    "      let offMin = h1 * 60 + m1;" +
+                    "      let onMin = h2 * 60 + m2;" +
+                    "      if (onMin < offMin) { onMin += 24 * 60; }" +
+                    "      const diff = onMin - offMin;" +
+                    "      const hours = Math.floor(diff / 60);" +
+                    "      const mins = diff % 60;" +
+                    "      document.getElementById('calcResult').innerText = diff + ' دقیقه';" +
+                    "      document.getElementById('calcDetail').innerText = hours + ' ساعت و ' + mins + ' دقیقه';" +
+                    "    }" +
+                    "    calculateBlock();" +
+                    "  </script>" +
                     "</body></html>";
 
                 webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
@@ -223,7 +274,7 @@ jobs:
         unzip -q gradle.zip
         ./gradle-8.4/bin/gradle assembleDebug --no-daemon
 
-    - name: Upload AvaFix Clean APK
+    - name: Upload AvaFix Advanced APK
       uses: actions/upload-artifact@v4
       with:
         name: AvaFix-Aviation-Edition
