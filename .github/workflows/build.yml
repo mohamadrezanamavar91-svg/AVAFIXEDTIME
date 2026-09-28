@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout
+    - name: Checkout Repository
       uses: actions/checkout@v4
 
     - name: Set up Java 17
@@ -20,43 +20,145 @@ jobs:
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
 
-    - name: Install Cordova
-      run: npm install -g cordova
-
-    - name: Create App & Build APK
+    - name: Generate Android Project Structure
       run: |
-        cordova create avafix com.avacrew.avafix AvaFix
-        cd avafix
-        cat << 'EOF' > www/index.html
-        <!DOCTYPE html>
-        <html lang="fa" dir="rtl">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>AvaFix</title>
-          <style>
-            body { font-family: sans-serif; background: #0b132b; color: #fff; padding: 20px; text-align: center; }
-            .card { background: #1c2541; padding: 20px; border-radius: 12px; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-            h2 { color: #48cae4; }
-            .badge { background: #3a506b; padding: 8px 12px; border-radius: 6px; display: inline-block; margin: 5px; }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <h2>سامانه AvaFix</h2>
-            <p>ثبت و محاسبه اتوماتیک ساعات پرواز بر اساس Fix Time</p>
-            <hr style="border-color: #3a506b;">
-            <div class="badge">MHD-RAS-MHD: ۲۵۰ دقیقه</div>
-            <div class="badge">MHD-BGW-MHD: ۳۷۵ دقیقه</div>
-          </div>
-        </body>
-        </html>
-        EOF
-        cordova platform add android
-        cordova build android --debug
+        mkdir -p app/src/main/java/com/avacrew/avafix
+        mkdir -p app/src/main/res/values
 
-    - name: Upload APK
+        # 1. Strings
+        cat << 'EOF' > app/src/main/res/values/strings.xml
+        <resources>
+            <string name="app_name">AvaFix</string>
+        </resources>
+        EOF
+
+        # 2. Android Manifest
+        cat << 'EOF' > app/src/main/AndroidManifest.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <application
+                android:allowBackup="true"
+                android:icon="@android:drawable/sym_def_app_icon"
+                android:label="@string/app_name"
+                android:supportsRtl="true"
+                android:theme="@style/Theme.AppCompat.Light.DarkActionBar">
+                <activity
+                    android:name=".MainActivity"
+                    android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOF
+
+        # 3. MainActivity Java Source
+        cat << 'EOF' > app/src/main/java/com/avacrew/avafix/MainActivity.java
+        package com.avacrew.avafix;
+
+        import android.os.Bundle;
+        import android.widget.LinearLayout;
+        import android.widget.TextView;
+        import androidx.appcompat.app.AppCompatActivity;
+
+        public class MainActivity extends AppCompatActivity {
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                LinearLayout layout = new LinearLayout(this);
+                layout.setOrientation(LinearLayout.VERTICAL);
+                layout.setPadding(50, 80, 50, 50);
+
+                TextView title = new TextView(this);
+                title.setText("AvaFix - Crew Logbook");
+                title.setTextSize(22);
+                layout.addView(title);
+
+                TextView info = new TextView(this);
+                info.setText("\nFixed Times:\n• MHD-RAS-MHD (R/T): 250 mins\n• MHD-BGW-MHD (R/T): 375 mins\n\nApp successfully installed!");
+                info.setTextSize(16);
+                layout.addView(info);
+
+                setContentView(layout);
+            }
+        }
+        EOF
+
+        # 4. Root settings.gradle
+        cat << 'EOF' > settings.gradle
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        rootProject.name = "AvaFix"
+        include ':app'
+        EOF
+
+        # 5. Root build.gradle
+        cat << 'EOF' > build.gradle
+        plugins {
+            id 'com.android.application' version '8.2.2' apply false
+        }
+        EOF
+
+        # 6. App build.gradle
+        cat << 'EOF' > app/build.gradle
+        plugins {
+            id 'com.android.application'
+        }
+
+        android {
+            namespace 'com.avacrew.avafix'
+            compileSdk 34
+
+            defaultConfig {
+                applicationId "com.avacrew.avafix"
+                minSdk 26
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+
+            buildTypes {
+                release {
+                    minifyEnabled false
+                }
+            }
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
+            }
+        }
+
+        dependencies {
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+        }
+        EOF
+
+    - name: Download Gradle Wrapper
+      run: |
+        curl -s -L -o gradle-8.5-bin.zip https://services.gradle.org/distributions/gradle-8.5-bin.zip
+        unzip -q gradle-8.5-bin.zip
+        ./gradle-8.5/bin/gradle wrapper --gradle-version 8.5
+        chmod +x gradlew
+
+    - name: Build APK with Gradle Wrapper
+      run: ./gradlew assembleDebug --no-daemon
+
+    - name: Upload Debug APK
       uses: actions/upload-artifact@v4
       with:
         name: AvaFix-APK
-        path: avafix/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        path: app/build/outputs/apk/debug/app-debug.apk
