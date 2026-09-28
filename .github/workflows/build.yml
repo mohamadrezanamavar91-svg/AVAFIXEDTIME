@@ -16,15 +16,15 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Set up Python for Icon Processing
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
 
-    - name: Install Imaging Library
+    - name: Install Pillow
       run: pip install pillow
 
-    - name: Setup Android Project & App Structure
+    - name: Create Android Structure & Files
       run: |
         mkdir -p app/src/main/java/com/avafix/logbook
         mkdir -p app/src/main/assets
@@ -35,24 +35,36 @@ jobs:
         mkdir -p app/src/main/res/mipmap-xxhdpi
         mkdir -p app/src/main/res/mipmap-xxxhdpi
 
-        # 1. settings.gradle
+        # settings.gradle
         cat << 'EOF' > settings.gradle
         rootProject.name = "AvaFix"
         include ':app'
         EOF
 
-        # 2. build.gradle (Root)
+        # root build.gradle
         cat << 'EOF' > build.gradle
         buildscript {
-            repositories { google(); mavenCentral() }
-            dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.2.2'
+            }
         }
-        allprojects { repositories { google(); mavenCentral() } }
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
         EOF
 
-        # 3. app/build.gradle
+        # app/build.gradle
         cat << 'EOF' > app/build.gradle
-        plugins { id 'com.android.application' }
+        plugins {
+            id 'com.android.application'
+        }
         android {
             namespace 'com.avafix.logbook'
             compileSdk 34
@@ -60,7 +72,7 @@ jobs:
                 applicationId "com.avafix.logbook"
                 minSdk 24
                 targetSdk 34
-                versionCode 9
+                versionCode 10
                 versionName "2.6"
             }
             buildTypes {
@@ -72,7 +84,7 @@ jobs:
         }
         EOF
 
-        # 4. Generate Ava Tail Icon (EP-RBD Calligraphy Heart Livery)
+        # Python script for Ava Tail Adaptive Icon
         cat << 'EOF' > make_icon.py
         import math
         from PIL import Image, ImageDraw
@@ -81,49 +93,62 @@ jobs:
             img = Image.new("RGBA", (size, size), (9, 11, 16, 255))
             draw = ImageDraw.Draw(img)
             
-            # Big Red AVA Circle
             r = size * 0.44
             cx, cy = size * 0.5, size * 0.5
             draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(211, 26, 43, 255))
             
-            # Dark Maroon Tail Arc
-            arc_r = size * 0.38
-            draw.ellipse([cx - arc_r - size*0.06, cy - arc_r - size*0.06, cx + arc_r - size*0.06, cy + arc_r - size*0.06], fill=(122, 7, 22, 255))
-            draw.ellipse([cx - r*0.9, cy - r*0.9 + size*0.05, cx + r*0.9, cy + r*0.9 + size*0.05], fill=(211, 26, 43, 255))
-            
-            # Parametric Calligraphy Heart Points (White)
-            steps = 420
+            steps = 360
             heart_scale = size * 0.016
-            heart_cx = cx + size * 0.01
-            heart_cy = cy - size * 0.03
+            heart_cx = cx
+            heart_cy = cy - size * 0.02
             
             for i in range(steps):
                 t = (2 * math.pi * i) / steps
-                # Heart equation
                 x = 16 * (math.sin(t) ** 3)
                 y = -(13 * math.cos(t) - 5 * math.cos(2*t) - 2 * math.cos(3*t) - math.cos(4*t))
-                
                 px = heart_cx + x * heart_scale
                 py = heart_cy + y * heart_scale
-                
-                pt_radius = (size * 0.012) + (math.sin(t*3) * (size * 0.006))
-                draw.ellipse([px - pt_radius, py - pt_radius, px + pt_radius, py + pt_radius], fill=(255, 255, 255, 240))
+                rad = (size * 0.012) + (math.sin(t*3) * (size * 0.005))
+                draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 245))
 
-            # Cascade of AVA Red & White Polka Dots on the bottom-right tail curve
             dots = [
-                (0.72, 0.65, 0.038, (255, 255, 255, 230)),
-                (0.78, 0.73, 0.030, (255, 255, 255, 230)),
-                (0.68, 0.77, 0.026, (211, 26, 43, 255)),
-                (0.60, 0.82, 0.022, (255, 255, 255, 210)),
-                (0.52, 0.85, 0.018, (211, 26, 43, 255)),
-                (0.82, 0.81, 0.020, (255, 255, 255, 200)),
-                (0.44, 0.88, 0.014, (255, 255, 255, 200))
+                (0.72, 0.65, 0.038),
+                (0.78, 0.73, 0.030),
+                (0.68, 0.77, 0.026),
+                (0.60, 0.82, 0.022),
+                (0.52, 0.85, 0.018),
+                (0.82, 0.81, 0.020),
+                (0.44, 0.88, 0.014)
             ]
-            for dx, dy, dr, col in dots:
+            for dx, dy, dr in dots:
                 px = size * dx
                 py = size * dy
                 rad = size * dr
-                draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=col)
+                draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 230))
+
+            return img
+
+        sizes = {
+            "app/src/main/res/mipmap-hdpi/ic_launcher.png": 72,
+            "app/src/main/res/mipmap-xh_scale
+                py = heart_cy + y * heart_scale
+                rad = (size * 0.012) + (math.sin(t*3) * (size * 0.005))
+                draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 245))
+
+            dots = [
+                (0.72, 0.65, 0.038),
+                (0.78, 0.73, 0.030),
+                (0.68, 0.77, 0.026),
+                (0.60, 0.82, 0.022),
+                (0.52, 0.85, 0.018),
+                (0.82, 0.81, 0.020),
+                (0.44, 0.88, 0.014)
+            ]
+            for dx, dy, dr in dots:
+                px = size * dx
+                py = size * dy
+                rad = size * dr
+                draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 230))
 
             return img
 
@@ -140,39 +165,13 @@ jobs:
         EOF
         python make_icon.py
 
-        # 5. AndroidManifest.xml
+        # AndroidManifest.xml
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <application
                 android:label="AvaFix"
-                android:icon="@mipmap/ic_launcher"
-                android:theme="@android:style/Theme.Material.NoActionBar">
-                <activity
-                    android:name=".MainActivity"
-                    android:windowSoftInputMode="adjustResize"
-                    android:exported="true">
-                    <intent-filter>
-                        <action android:name="android.intent.action.MAIN" />
-                        <category android:name="android.intent.category.LAUNCHER" />
-                    </intent-filter>
-                </activity>
-            </application>
-        </manifest>
-        EOF
-
-        # 6. layout
-        cat << 'EOF' > app/src/main/res/layout/activity_main.xml
-        <?xml version="1.0" encoding="utf-8"?>
-        <android.webkit.WebView xmlns:android="http://schemas.android.com/apk/res/android"
-            android:id="@+id/webview"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-        EOF
-
-        # 7. MainActivity.java
-        cat << 'EOF' > app/src/main/java/com/avafix/logbook/MainActivity.java
-        package com.avafix.logbook;
+                android:icon="@mipmap/ic.avafix.logbook;
 
         import android.app.Activity;
         import android.os.Bundle;
@@ -197,7 +196,7 @@ jobs:
         }
         EOF
 
-        # 8. Web App Assets (index.html)
+        # app/src/main/assets/index.html
         cat << 'EOF' > app/src/main/assets/index.html
         <!DOCTYPE html>
         <html lang="fa" dir="rtl">
@@ -208,7 +207,6 @@ jobs:
           <style>
             :root {
               --red: #D31A2B;
-              --red-dark: #8F101C;
               --bg: #090B10;
               --card: #131722;
               --card-sec: #181E2B;
@@ -230,7 +228,7 @@ jobs:
             
             label { display: block; font-size: 11px; color: var(--sub); margin: 6px 0 4px; font-weight: 700; text-transform: uppercase; }
             select, input {
-              width: 100%; background: #0A0C13; border: 1px solid #283042; border-radius: 10px; color: #FFF; padding: 11px 12px; font-size: 14px; font-weight: 700; outline: none; transition: border-color 0.2s;
+              width: 100%; background: #0A0C13; border: 1px solid #283042; border-radius: 10px; color: #FFF; padding: 11px 12px; font-size: 14px; font-weight: 700; outline: none;
             }
             select:focus, input:focus { border-color: var(--red); }
             .input-en { direction: ltr; text-align: left; text-transform: uppercase; font-family: monospace; letter-spacing: 1px; }
@@ -245,19 +243,15 @@ jobs:
             .btn-sum { width: 100%; margin-top: 10px; background: var(--red); border: none; color: #fff; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 900; cursor: pointer; }
             .btn-save { width: 100%; margin-top: 8px; background: #1B2936; border: 1px solid #28543E; color: var(--ok); padding: 11px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
 
+            .route-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid100%; margin-top: 10px; background: var(--red); border: none; color: #fff; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 900; cursor: pointer; }
+            .btn-save { width: 100%; margin-top: 8px; background: #1B2936; border: 1px solid #28543E; color: var(--ok); padding: 11px; border-radius: 10px; font-size: 13px; font-weight: 800; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
             .route-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
             .route-info b { font-size: 13px; color: #fff; display: block; font-family: monospace; }
             .route-info span { font-size: 11px; color: var(--sub); }
             .route-action { display: flex; align-items: center; gap: 6px; }
             .route-badge { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.3); color: var(--gold); padding: 4px 8px; border-radius: 6px; font-size: 13px; font-weight: 800; direction: ltr; }
-            .btn-del { background: rgba(211,26,43,0.15); border: 1px solid rgba(211,26,43,0.3); color: var(--red); font-size: 12px; width: 26px; height: 26px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-            
-            /* Drawer Folder Archive */
-            .folder-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; }
-            .folder-title { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; color: #CBD5E1; }
-            .folder-badge { background: rgba(255,255,255,0.08); padding: 2px 7px; border-radius: 6px; font-size: 10px; }
-            .archive-list { margin-top: 12px; display: none; }
-            .archive-item { background: var(--card-sec); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+            .btn-del { background: rgba(211,26,43,0.15); border: 1px solid rgba(211,26,43,0.3); color: var(--red); font55,255,255,0.07); border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
             
             .total-card { background: linear-gradient(135deg, #131722 0%, #1e1317 100%); border: 1px solid rgba(211,26,43,0.4); border-radius: 14px; padding: 16px; text-align: center; margin-top: 10px; }
             .tot-title { font-size: 11px; color: var(--sub); font-weight: 700; }
@@ -267,26 +261,12 @@ jobs:
         </head>
         <body>
 
-          <!-- Header -->
           <div class="header-bar">
-            <div class="badge-top">✈ AVA AIRLINES CREW</div>
+            <div class="badge-top">AVA AIRLINES CREW</div>
             <h1>AvaFix Logbook</h1>
           </div>
 
-          <!-- Month & Year Selector (1405 to 1415 / 2026 to 2036) -->
           <div class="card">
-            <div class="cal-selector-bar">
-              <button class="cal-btn active" id="btnShamsi" onclick="setCalType('shamsi')">تقویم شمسی</button>
-              <button class="cal-btn" id="btnMiladi" onclick="setCalType('miladi')">CALENDAR (UTC)</button>
-            </div>
-            
-            <div class="grid-2">
-              <div>
-                <label>سال پروازی</label>
-                <select id="yearSelect" onchange="onPeriodChanged()"></select>
-              </div>
-              <div>
-                <label>ماه پروازی</="card">
             <div class="cal-selector-bar">
               <button class="cal-btn active" id="btnShamsi" onclick="setCalType('shamsi')">تقویم شمسی</button>
               <button class="cal-btn" id="btnMiladi" onclick="setCalType('miladi')">CALENDAR (UTC)</button>
@@ -304,7 +284,6 @@ jobs:
             </div>
           </div>
 
-          <!-- FIXED TIME & Route Selection -->
           <div class="card accent">
             <label style="color:var(--gold); font-size:12px;">FIXED TIME</label>
             <select id="routeSelect" onchange="onRouteSelected()"></select>
@@ -323,16 +302,23 @@ jobs:
             <button class="btn-primary" onclick="addFlightRoute()">+ ADD FLIGHT LEG</button>
           </div>
 
-          <!-- Current Month Log List -->
           <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
               <span style="font-weight:800; font-size:12px;" id="listTitleHeader">روت‌های ثبت شده</span>
-              <span style="font-size:11px; color:var(--red); cursor:pointer; font-weight: Block Time)</div>
+              <span style="font-size:11px; color:var(--red); cursor:pointer; font-weight:700;" onclick="clearCurrentLog()">پاک کردن ماه</span>
+            </div>
+            <div id="routesListContainer"></div>
+
+            <button class="btn-sum" onclick="calculateTotalHours()">محاسبه مجموع ساعت پرواز</button>
+            <button class="btn-save" onclick="saveToArchive()">💾 ذخیره لاگ‌بوک در بایگانی (Save)</button>
+          </div>
+
+          <div class="total-card" id="summaryBox" style="display:none;">
+            <div class="tot-title">مجموع ساعت پروازی مصوب (Total Fixed Block Time)</div>
             <div class="tot-val" id="totalDisplay">00:00</div>
             <div class="tot-sub" id="totalCountDisplay">۰ لگ پروازی • ۰ دقیقه</div>
           </div>
 
-          <!-- Collapsible Drawer Folder: Saved Archive -->
           <div class="card" style="margin-top:14px; background:#0F121B;">
             <div class="folder-header" onclick="toggleArchiveFolder()">
               <div class="folder-title">
@@ -345,13 +331,10 @@ jobs:
               </div>
             </div>
 
-            <div class="archive-list" id="archiveContainer">
-              <!-- Dynamically populated archive logs -->
-            </div>
+            <div class="archive-list" id="archiveContainer"></div>
           </div>
 
           <script>
-            // Database of Ava Airlines Approved Routes
             const AVA_ROUTES = [
               { code: "THR-MHD", name: "تهران ⇄ مشهد", dur: "01:45", min: 105 },
               { code: "MHD-THR", name: "مشهد ⇄ تهران", dur: "01:55", min: 115 },
@@ -427,7 +410,6 @@ jobs:
               localStorage.setItem("ava_cal", type);
               document.getElementById("btnShamsi").classList.toggle("active", type === "shamsi");
               document.getElementById("btnMiladi").classList.toggle("active", type === "miladi");
-              
               initDateSelectors();
               renderMonthRoutes();
             }
@@ -579,4 +561,57 @@ jobs:
                   <div class="route-action">
                     <div class="route-badge">${item.dur}</div>
                     <button class="btn-del" onclick="deleteFlight(${item.id})">✕</button>
-                  <
+                  </div>
+                `;
+                container.appendChild(el);
+              });
+            }
+
+            function calculateTotalHours() {
+              const list = getFlights();
+              if (list.length === 0) {
+                alert("هیچ روتی برای محاسبه وجود ندارد.");
+                return null;
+              }
+              let sumMin = 0;
+              list.forEach(i => sumMin += i.min);
+              const hours = Math.floor(sumMin / 60);
+              const minutes = sumMin % 60;
+              const formatted = String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0");
+
+              document.getElementById("totalDisplay").innerText = formatted;
+              document.getElementById("totalCountDisplay").innerText = `${list.length} لگ پروازی • ${sumMin} دقیقه مجموع پرواز`;
+              document.getElementById("summaryBox").style.display = "block";
+              return { legs: list.length, formatted: formatted, minutes: sumMin };
+            }
+
+            function getArchive() {
+              return JSON.parse(localStorage.getItem("ava_archive_master") || "[]");
+            }
+
+            function saveToArchive() {
+              const list = getFlights();
+              if (list.length === 0) {
+                alert("روتی در این ماه برای ذخیره وجود ندارد.");
+                return;
+              }
+              const calc = calculateTotalHours();
+              const mName = currentCal === "shamsi" ? SHAMSI_MONTHS[currentMonth] : MILADI_MONTHS[currentMonth];
+              const title = `${mName} ${currentYear} (${currentCal === "shamsi" ? "شمسی" : "UTC"})`;
+              
+              const archive = getArchive();
+              const entry = {
+                id: Date.now(),
+                periodTitle: title,
+                cal: currentCal,
+                year: currentYear,
+                month: currentMonth,
+                legs: list.length,
+                totalTime: calc.formatted,
+                totalMin: calc.minutes,
+                routes: list,
+                savedAt: new Date().toLocaleString("fa-IR")
+              };
+
+              archive.unshift(entry);
+              localStorage.setItem("ava_archive_master", JSON.
