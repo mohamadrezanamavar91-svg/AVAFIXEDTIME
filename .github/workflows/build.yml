@@ -5,28 +5,34 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    container:
-      image: mobiledevops/android-sdk-image:34.0.0
+    runs-on: ubuntu-22.04
 
     steps:
-    - name: Generate Source Code and Build APK
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Generate Android Project and Build APK
       run: |
+        # 1. آماده‌سازی ساختار پوشه‌ها
         mkdir -p app/src/main/java/com/avacrew/avafix
         mkdir -p app/src/main/res/values
 
+        # 2. فایل رشته‌ها
         cat << 'EOF' > app/src/main/res/values/strings.xml
         <resources>
             <string name="app_name">AvaFix</string>
         </resources>
         EOF
 
+        # 3. مانیفست
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+            package="com.avacrew.avafix">
             <application
-                android:allowBackup="true"
-                android:icon="@android:drawable/sym_def_app_icon"
                 android:label="@string/app_name"
                 android:supportsRtl="true">
                 <activity
@@ -41,6 +47,7 @@ jobs:
         </manifest>
         EOF
 
+        # 4. کد برنامه
         cat << 'EOF' > app/src/main/java/com/avacrew/avafix/MainActivity.java
         package com.avacrew.avafix;
 
@@ -58,12 +65,12 @@ jobs:
                 layout.setPadding(60, 100, 60, 60);
 
                 TextView title = new TextView(this);
-                title.setText("AvaFix - Crew Logbook");
-                title.setTextSize(24);
+                title.setText("✈️ AvaFix - Crew Logbook");
+                title.setTextSize(22);
                 layout.addView(title);
 
                 TextView info = new TextView(this);
-                info.setText("\nFixed Times:\n• MHD-RAS-MHD (R/T): 250 mins\n• MHD-BGW-MHD (R/T): 375 mins\n\nStatus: Ready");
+                info.setText("\nFixed Times:\n• MHD-RAS-MHD: 250 mins\n• MHD-BGW-MHD: 375 mins\n\nStatus: Online & Ready");
                 info.setTextSize(16);
                 layout.addView(info);
 
@@ -72,11 +79,13 @@ jobs:
         }
         EOF
 
+        # 5. تنظیمات روت
         cat << 'EOF' > settings.gradle
         rootProject.name = "AvaFix"
         include ':app'
         EOF
 
+        # 6. بیلد گریدل ریشه
         cat << 'EOF' > build.gradle
         buildscript {
             repositories {
@@ -95,6 +104,7 @@ jobs:
         }
         EOF
 
+        # 7. بیلد گریدل اپلیکیشن
         cat << 'EOF' > app/build.gradle
         apply plugin: 'com.android.application'
 
@@ -109,6 +119,12 @@ jobs:
                 versionCode 1
                 versionName "1.0"
             }
+
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
+            }
+
             buildTypes {
                 release {
                     minifyEnabled false
@@ -117,11 +133,13 @@ jobs:
         }
         EOF
 
-        gradle wrapper --gradle-version 8.4
+        # 8. پذیرش لایسنس‌ها و ایجاد Wrapper اختصاصی
+        yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+        gradle wrapper
         ./gradlew assembleDebug --no-daemon
 
     - name: Upload Debug APK
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: AvaFix-APK
         path: app/build/outputs/apk/debug/app-debug.apk
