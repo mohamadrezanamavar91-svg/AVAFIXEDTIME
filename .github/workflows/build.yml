@@ -42,13 +42,43 @@ jobs:
         mkdir -p app/src/main/java/com/avafix/logbook
         mkdir -p app/src/main/res/values
 
-        # 1. ساخت آیکون با پایتون
+        # 1. ساخت آیکون با کیفیت
         cat << 'EOF' > make_icon.py
         import math
         from PIL import Image, ImageDraw
 
         def generate_ava_icon(size):
-            img = Image.new("RGBA", (size, size), (9, 11, 16, 255))
+            img = Image.new("RGBA", (size, size), (11, 14, 21, 255))
+            draw = ImageDraw.Draw(img)
+            ractions/setup-gradle@v3
+      with:
+        gradle-version: '8.5'
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Python Dependencies
+      run: pip install Pillow
+
+    - name: Build Android Project & Assets
+      run: |
+        mkdir -p app/src/main/assets
+        mkdir -p app/src/main/res/mipmap-hdpi
+        mkdir -p app/src/main/res/mipmap-xhdpi
+        mkdir -p app/src/main/res/mipmap-xxhdpi
+        mkdir -p app/src/main/res/mipmap-xxxhdpi
+        mkdir -p app/src/main/java/com/avafix/logbook
+        mkdir -p app/src/main/res/values
+
+        # 1. ساخت آیکون با کیفیت
+        cat << 'EOF' > make_icon.py
+        import math
+        from PIL import Image, ImageDraw
+
+        def generate_ava_icon(size):
+            img = Image.new("RGBA", (size, size), (11, 14, 21, 255))
             draw = ImageDraw.Draw(img)
             r = size * 0.44
             cx, cy = size * 0.5, size * 0.5
@@ -60,27 +90,7 @@ jobs:
             for i in range(steps):
                 t = (2 * math.pi * i) / steps
                 x = 16 * (math.sin(t) ** 3)
-                y = -(13 * math.cos(t) - 5 * math.cos(2*t) - 2 * math.cos(3*t) - math.cos(4*t))
-                px = heart_cx + x * heart_scale
-                py = heart_cy + y * heart_scale
-                rad = (size * 0.012) + (math.sin(t*3) * (size * 0.005))
-                draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 245))
-            return img
-
-        sizes = {
-            "app/src/main/res/mipmap-hdpi/ic_launcher.png": 72,
-            "app/src/main/res/mipmap-xhdpi/ic_launcher.png": 96,
-            "app/src/main/res/mipmap-xxhdpi/ic_launcher.png": 144,
-            "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": 192
-        }
-        for path, s in sizes.items():
-            icon = generate_ava_icon(s)
-            icon.save(path, "PNG")
-        EOF
-        python make_icon.py
-
-        # 2. settings.gradle
-        cat << 'EOF' > settings.gradle
+                y = -(13 * math.cos(t) - 5 * math.cos(2*t) - 2 * math << 'EOF' > settings.gradle
         pluginManagement {
             repositories {
                 google()
@@ -120,8 +130,8 @@ jobs:
                 applicationId "com.avafix.logbook"
                 minSdk 24
                 targetSdk 34
-                versionCode 15
-                versionName "3.0"
+                versionCode 16
+                versionName "3.1"
             }
 
             buildTypes {
@@ -184,669 +194,568 @@ jobs:
         }
         EOF
 
-        # 7. UI و لاجیک اپلیکیشن
+        # 7. UI بازطراحی‌شده و فوق‌العاده شیک با استانداردهای ارگونومی هوانوردی
         cat << 'EOF' > app/src/main/assets/index.html
         <!DOCTYPE html>
         <html lang="fa" dir="rtl">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-            <title>AvaFix Crew Logbook</title>
+            <title>AvaFix - Crew Flight Logbook</title>
             <style>
                 :root {
-                    --bg-dark: #090B10;
-                    --card-bg: #12151D;
+                    --bg-main: #0B0E15;
+                    --card-surface: #141824;
+                    --card-surface-hover: #1A2030;
                     --primary-red: #D31A2B;
-                    --accent-cyan: #00E5FF;
-                    --text-main: #FFFFFF;
-                    --text-sub: #A0AEC0;
-                    --border-clr: #232936;
+                    --primary-red-glow: rgba(211, 26, 43, 0.4);
+                    --accent-emerald: #00F5A0;
+                    --accent-cyan: #38BDF8;
+                    --text-primary: #F8FAFC;
+                    --text-secondary: #94A3B8;
+                    --text-muted: #64748B;
+                    --border-subtle: #232B3E;
+                    --border-highlight: #334155;
+                    --glass-bg: rgba(20, 24, 36, 0.85);
                 }
-                * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+                * {
+                    box-sizing: border-box;
+                    -webkit-tap-highlight-color: transparent;
+                    user-select: none;
+                }
                 body {
                     margin: 0;
                     padding: 0;
-                    background: var(--bg-dark);
-                    color: var(--text-main);
-                    font-family: system-ui, -apple-system, sans-serif;
+                    background-color: var(--bg-main);
+                    background-image: 
+                        radial-gradient(at 0% 0%, rgba(211, 26, 43, 0.12) 0px, transparent 50%),
+                        radial-gradient(at 100% 100%, rgba(0, 245, 160, 0.06) 0px, transparent 50%);
+                    color: var(--text-primary);
+                    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
                     direction: rtl;
+                    min-height: 100vh;
+                    padding-bottom: 25px;
                 }
-                .header {
-                    background: var(--card-bg);
-                    padding: 14px 18px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    border-bottom: 1px solid var(--border-clr);
+
+                /* هدر شیشه‌ای و برند آوا */
+                .navbar {
                     position: sticky;
                     top: 0;
                     z-index: 100;
+                    background: var(--glass-bg);
+                    backdrop-filter: blur(14px);
+                    -webkit-backdrop-filter: blur(14px);
+                    border-bottom: 1px solid var(--border-subtle);
+                    padding: 12px 18px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
                 }
-                .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; }
-                .brand-badge { background: var(--primary-red); color: white; padding: 2px 7px; border-radius: 6px; font-size: 11px; }
-                .drawer-btn {
-                    background: #1A202C;
-                    border: 1px solid var(--border-clr);
-                    color: white;
-                    padding: 8px 12px;
-                    border-radius: 8px;
-                    cursor: pointer;
+                .brand-container {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                .brand-logo {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 9px;
+                    background: linear-gradient(135deg, #FF2E44, #B01020);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 4px 12px var(--primary-red-glow);
+                }
+                .brand-logo svg {
+                    width: 18px;
+                    height: 18px;
+                    fill: #FFFFFF;
+                }
+                .brand-text h1 {
+                    margin: 0;
+                    font-size: 16px;
+                    font-weight: 800;
+                    letter-spacing: -0.3px;
+                    background: linear-gradient(90deg, #FFFFFF, #E2E8F0);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                }
+                .brand-text p {
+                    margin: 0;
+                    font-size: 10px;
+                    color: var(--text-muted);
+                    font-weight: 600;
+                    letter-spacing: 0.5px;
+                }
+                .btn-archive-toggle {
+                    background: linear-gradient(180deg, #1E2538 0%, #151A28 100%);
+                    border: 1px solid var(--border-highlight);
+                    color: var(--text-primary);
+                    padding: 8px 14px;
+                    border-radius: 10px;
                     font-size: 12px;
-                }
-                .container { padding: 14px; max-width: 520px; margin: 0 auto; }
-                
-                .month-banner {
-                    background: linear-gradient(135deg, #1C1917 0%, #12151D 100%);
-                    border: 1px solid #38292B;
-                    border-radius: 12px;
-                    padding: 14px 16px;
-                    margin-bottom: 14px;
-                }
-                .month-banner-row {
+                    font-weight: 700;
+                    cursor: pointer;
                     display: flex;
-                    justify-content: space-between;
                     align-items: center;
+                    gap: 6px;
+                    transition: all 0.2s ease;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
                 }
-                .month-title { font-size: 13px; color: var(--text-sub); }
-                .month-hours { font-size: 24px; font-weight: 900; color: #68D391; }
-                .month-hours span { font-size: 13px; color: var(--primary-red); font-weight: normal; margin-right: 4px; }
+                .btn-archive-toggle:active {
+                    transform: scale(0.97);
+                    border-color: var(--accent-cyan);
+                }
 
-                .card {
-                    background: var(--card-bg);
-                    border: 1px solid var(--border-clr);
-                    border-radius: 12px;
+                .app-wrapper {
                     padding: 16px;
-                    margin-bottom: 14px;
+                    max-width: 500px;
+                    margin: 0 auto;
                 }
-                .section-header {
-                    font-size: 14px;
-                    font-weight: bold;
-                    margin-bottom: 12px;
+
+                /* کارت خلاصه ماه (Cockpit Instrument HUD) */
+                .hud-card {
+                    background: linear-gradient(135deg, rgba(26, 32, 48, 0.9) 0%, rgba(17, 21, 33, 0.95) 100%);
+                    border: 1px solid var(--border-highlight);
+                    border-radius: 16px;
+                    padding: 16px 18px;
+                    margin-bottom: 18px;
+                    box-shadow: 0 10px 25px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+                    position: relative;
+                    overflow: hidden;
+                }
+                .hud-card::before {
+                    content: '';
+                    position: absolute;
+                    top: 0; left: 0; right: 0;
+                    height: 2px;
+                    background: linear-gradient(90deg, var(--primary-red), var(--accent-cyan), var(--accent-emerald));
+                }
+                .hud-title-bar {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    color: #E2E8F0;
+                    margin-bottom: 12px;
                 }
-                .form-group { margin-bottom: 12px; }
-                label { display: block; font-size: 12px; color: var(--text-sub); margin-bottom: 6px; }
-                select {
-                    width: 100%;
-                    background: #1A202C;
-                    border: 1px solid var(--border-clr);
-                    color: white;
-                    padding: 10px 10px;
-                    border-radius: 8px;
+                .hud-label {
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: var(--text-secondary);
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+                .hud-live-indicator {
+                    width: 7px;
+                    height: 7px;
+                    border-radius: 50%;
+                    background: var(--accent-emerald);
+                    box-shadow: 0 0 8px var(--accent-emerald);
+                }
+                .hud-display-row {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-end;
+                    padding-top: 4px;
+                }
+                .hud-period-info {
                     font-size: 13px;
-                    outline: none;
+                    font-weight: 700;
+                    color: #FFFFFF;
                 }
-                .date-grid {
+                .hud-period-sub {
+                    font-size: 11px;
+                    color: var(--accent-cyan);
+                    margin-top: 4px;
+                    direction: ltr;
+                    text-align: right;
+                }
+                .hud-counter {
+                    font-size: 30px;
+                    font-weight: 900;
+                    color: var(--accent-emerald);
+                    font-family: ui-monospace, SFMono-Regular, "Courier New", monospace;
+                    text-shadow: 0 0 16px rgba(0, 245, 160, 0.35);
+                    line-height: 1;
+                }
+                .hud-counter span {
+                    font-size: 13px;
+                    color: var(--text-muted);
+                    font-family: inherit;
+                    margin-right: 4px;
+                }
+
+                /* کارت ثبت وظیفه */
+                .flight-card {
+                    background: var(--card-surface);
+                    border: 1px solid var(--border-subtle);
+                    border-radius: 16px;
+                    padding: 18px;
+                    margin-bottom: 16px;
+                    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+                }
+                .card-title {
+                    font-size: 14px;
+                    font-weight: 800;
+                    color: #FFFFFF;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 16px;
+                    padding-bottom: 10px;
+                    border-bottom: 1px solid rgba(255,255,255,0.05);
+                }
+                .badge-pill {
+                    background: rgba(56, 189, 248, 0.12);
+                    color: var(--accent-cyan);
+                    border: 1px solid rgba(56, 189, 248, 0.25);
+                    font-size: 11px;
+                    font-weight: 700;
+                    padding: 3px 9px;
+                    border-radius: 20px;
+                }
+
+                /* فیلدها و فرم‌ها */
+                .form-group {
+                    margin-bottom: 14px;
+                }
+                label {
+                    display: block;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: var(--text-secondary);
+                    margin-bottom: 7px;
+                }
+                .date-picker-grid {
                     display: grid;
                     grid-template-columns: 1fr 1fr 1fr;
                     gap: 8px;
                 }
+                select {
+                    width: 100%;
+                    background: #19202F;
+                    border: 1px solid var(--border-highlight);
+                    color: #FFFFFF;
+                    padding: 10px 12px;
+                    border-radius: 10px;
+                    font-size: 13px;
+                    outline: none;
+                    transition: border-color 0.2s;
+                    appearance: none;
+                    -webkit-appearance: none;
+                    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+                    background-repeat: no-repeat;
+                    background-position: left 10px center;
+                    background-size: 14px;
+                }
+                select:focus {
+                    border-color: var(--accent-cyan);
+                }
+
                 .gregorian-badge {
-                    margin-top: 6px;
+                    margin-top: 8px;
                     font-size: 11px;
                     color: var(--accent-cyan);
-                    background: #111E2E;
-                    padding: 5px 8px;
-                    border-radius: 6px;
-                    border: 1px solid #1E3A5F;
+                    background: rgba(56, 189, 248, 0.08);
+                    padding: 7px 12px;
+                    border-radius: 8px;
+                    border: 1px dashed rgba(56, 189, 248, 0.3);
                     direction: ltr;
                     text-align: right;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
                 }
 
+                /* دکمه اضافه کردن لگ */
                 .btn-add-leg {
                     width: 100%;
-                    background: #2D3748;
-                    color: white;
-                    border: 1px dashed #4A5568;
-                    padding: 11px;
-                    border-radius: 8px;
-                    font-size: 13px;
-                    font-weight: bold;
-                    cursor: pointer;
-                    margin-top: 4px;
-                }
-                .btn-add-leg:active { background: #374151; }
-
-                .legs-list { margin: 12px 0; }
-                .leg-row {
-                    background: #161A23;
-                    border: 1px solid var(--border-clr);
-                    border-radius: 8px;
-                    padding: 10px 12px;
-                    margin-bottom: 8px;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    font-size: 13px;
-                }
-                .leg-badge {
-                    background: rgba(211, 26, 43, 0.2);
-                    color: #FF6B6B;
-                    padding: 3px 8px;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: bold;
-                }
-                .btn-remove-leg {
-                    background: none;
-                    border: none;
-                    color: #E53E3E;
-                    cursor: pointer;
-                    font-size: 16px;
-                    padding: 0 4px;
-                }
-
-                .total-box {
-                    background: #181D28;
-                    border-radius: 8px;
+                    background: rgba(255, 255, 255, 0.03);
+                    color: #E2E8F0;
+                    border: 1.5px dashed var(--border-highlight);
                     padding: 12px;
+                    border-radius: 12px;
+                    font-size: 13px;
+                    font-weight: 700;
+                    cursor: pointer;
+                    margin-top: 6px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    transition: all 0.2s ease;
+                }
+                .btn-add-leg:active {
+                    background: rgba(255, 255, 255, 0.08);
+                    border-color: var(--accent-cyan);
+                    color: var(--accent-cyan);
+                }
+
+                /* لیست لگ‌های اضافه شده (Flight Strip Design) */
+                .legs-container {
+                    margin: 14px 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+                .leg-card {
+                    background: linear-gradient(90deg, #181E2E 0%, #151A28 100%);
+                    border: 1px solid var(--border-subtle);
+                    border-right: 3px solid var(--primary-red);
+                    border-radius: 10px;
+                    padding: 10px 14px;
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    margin: 12px 0;
-                    border: 1px solid #2D3748;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
                 }
-                .total-time-val { font-size: 18px; font-weight: 900; color: #68D391; }
-
-                button.btn-primary {
-                    width: 100%;
-                    background: var(--primary-red);
-                    color: white;
-                    border: none;
-                    padding: 13px;
-                    border-radius: 8px;
-                    font-size: 14px;
+                .leg-info-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                .leg-idx-circle {
+                    width: 22px;
+                    height: 22px;
+                    border-radius: 50%;
+                    background: #232B3E;
+                    color: #CBD5E1;
+                    font-size: 11px;
                     font-weight: bold;
-                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justifytransition: all 0.2s ease;
                 }
-                button.btn-primary:disabled {
-                    background: #4A5568;
+                .btn-add-leg:active {
+                    background: rgba(255, 255, 255, 0.08);
+                    border-color: var(--accent-cyan);
+                    color: var(--accent-cyan);
+                }
+
+                /* لیست لگ‌های اضافه شده (Flight Strip Design) */
+                .legs-container {
+                    margin: 14px 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+                .leg-card {
+                    background: linear-gradient(90deg, #181E2E 0%, #151A28 100%);
+                    border: 1px solid var(--border-subtle);
+                    border-right: 3px solid var(--primary-red);
+                    border-radius: 10px;
+                    padding: 10px 14px;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+                }
+                .leg-info-left {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                .leg-idx-circle {
+                    width: 22px;
+                    height: 22px;
+                    border-radius: 50%;
+                    background: #232B3E;
+                    color: #CBD5E1;
+                    font-size: 11px;
+                    font-weight: bold;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .leg-route-name {
+                    font-size: 13px;
+                    font-weight: 700;
+                    color: #FFFFFF;
+                }
+                .leg-actions-right {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+                 ذخیره */
+                .btn-save-duty {
+                    width: 100%;
+                    background: linear-gradient(135deg, #E02033 0%, #A81020 100%);
+                    color: #FFFFFF;
+                    border: none;
+                    padding: 14px;
+                    border-radius: 12px;
+                    font-size: 14px;
+                    font-weight: 800;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    box-shadow: 0 6px 18px var(--primary-red-glow);
+                    transition: all 0.2s ease;
+                }
+                .btn-save-duty:active {
+                    transform: scale(0.98);
+                    box-shadow: 0 2px 10px var(--primary-red-glow);
+                }
+                .btn-save-duty:disabled {
+                    background: #232B3E;
+                    color: var(--text-muted);
+                    box-shadow: none;
                     cursor: not-allowed;
                 }
 
+                /* دراور کشویی آرشیو ماهانه */
                 .drawer-overlay {
                     position: fixed;
                     top: 0; left: 0; right: 0; bottom: 0;
-                    background: rgba(0,0,0,0.7);
+                    background: rgba(4, 6, 10, 0.75);
+                    backdrop-filter: blur(5px);
+                    -webkit-backdrop-filter: blur(5px);
                     display: none;
                     z-index: 200;
                 }
                 .drawer-content {
                     position: fixed;
-                    top: 0; bottom: 0; right: -350px;
-                    width: 330px;
-                    background: var(--card-bg);
-                    border-left: 1px solid var(--border-clr);
+                    top: 0; bottom: 0; right: -360px;
+                    width: 340px;
+                    background: #111520;
+                    border-left: 1px solid var(--border-highlight);
                     z-index: 201;
-                    transition: right 0.3s ease;
+                    transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
                     display: flex;
                     flex-direction: column;
+                    box-shadow: -10px 0 30px rgba(0,0align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    box-shadow: 0 6px 18px var(--primary-red-glow);
+                    transition: all 0.2s ease;
+                }
+                .btn-save-duty:active {
+                    transform: scale(0.98);
+                    box-shadow: 0 2px 10px var(--primary-red-glow);
+                }
+                .btn-save-duty:disabled {
+                    background: #232B3E;
+                    color: var(--text-muted);
+                    box-shadow: none;
+                    cursor: not-allowed;
+                }
+
+                /* دراور کشویی آرشیو ماهانه */
+                .drawer-overlay {
+                    position: fixed;
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(4, 6, 10, 0.75);
+                    backdrop-filter: blur(5px);
+                    -webkit-backdrop-filter: blur(5px);
+                    display: none;
+                    z-index: 200;
+                }
+                .drawer-content {
+                    position: fixed;
+                    top: 0; bottom: 0; right: -360px;
+                    width: 340px;
+                    background: #111520;
+                    border-left: 1px solid var(--border-highlight);
+                    z-index: 201;
+                    transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+                    display: flex;
+                    flex-direction: column;
+                    box-shadow: -10px 0 30px rgba(0,0,0,0.6);
                 }
                 .drawer-open .drawer-overlay { display: block; }
                 .drawer-open .drawer-content { right: 0; }
                 .drawer-header {
-                    padding: 16px;
-                    border-bottom: 1px solid var(--border-clr);
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
+                    padding: 18px;
+                    border-bottom: 1px solid var(--border-subtlesize: 13px;
+                    font-weight: 800;
+                    color: #FFFFFF;
                 }
-                .drawer-body {
-                    padding: 14px;
-                    overflow-y: auto;
-                    flex: 1;
-                }
-                .month-group-card {
-                    background: #161A23;
-                    border: 1px solid #2D3748;
-                    border-radius: 8px;
-                    margin-bottom: 14px;
-                    overflow: hidden;
-                }
-                .month-group-header {
-                    background: #1E2430;
-                    padding: 10px 12px;
+                .archive-month-sum {
                     font-size: 13px;
-                    font-weight: bold;
+                    font-weight: 800;
+                    color: var(--accent-emerald);
+                    font-family: ui-monospace, monospace;
+                }
+                .archive-duty-item {
+                    padding: 12px 14px;
+                    border-bottom: 1px solid rgba(255,255,255,0.04);
+                }
+                .archive-duty-item:last-child {
+                    border-bottom: none;
+                }
+                .archive-duty-head {
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    border-bottom: 1px solid #2D3748;
+                    margin-bottom: 8px;
                 }
-                .archive-item {
-                    padding: 10px 12px;
-                    border-bottom: 1px solid #232936;
+                .archive-date-tag {
+                    font-size: 12px;
+                    font-weight: 700;
+                    color: #E2E8F0;
                 }
-                .archive-item:last-child { border-bottom: none; }
-                .archive-item-top {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    margin-bottom: 6px;
-                }
-                .archive-leg-detail {
-                    font-size: 11px;
-                    color: var(--text-sub);
-                    display: flex;
-                    justify-content: space-between;
-                    margin-top: 3px;
-                }
-                .btn-del {
-                    background: #E53E3E;
-                    border: none;
-                    color: white;
-                    padding: 3px 6px;
-                    border-radius: 4px;
+                .btn-delete-duty {
+                    background: rgba(229, 62, 62, 0.12);
+                    border: 1px solid rgba(229, 62, 62, 0.25);
+                    color: #FF5A6B;
+                    padding: 3px 8px;
+                    border-radius: 6px;
                     cursor: pointer;
                     font-size: 11px;
+                    font-weight: 600;
+                }
+                .archive-leg-mini {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    font-size: 11px;
+                    color: var(--text-secondary);
+                    margin-top: 4px;
+                    padding-right: 6px;
+                    border-right: 2px solid var(--border-highlight);
                 }
             </style>
         </head>
         <body>
-            <div class="header">
-                <div class="brand">
-                    <span class="brand-badge">AVA</span>
-                    <span>AvaFix Logbook</span>
-                </div>
-                <button class="drawer-btn" onclick="toggleDrawer(true)">📂 سوابق ماهانه</button>
-            </div>
 
-            <div class="container">
-                <div class="month-banner">
-                    <div style="font-size:12px; color:var(--text-sub); margin-bottom:8px;">انتخاب دوره جهت محاسبه و بررسی:</div>
-                    <div class="date-grid" style="margin-bottom: 12px;">
+            <!-- نوار هدر برند هواپیمایی آوا -->
+            <nav class="navbar">
+                <div class="brand-container">
+                    <div class="brand-logo">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/>
+                        </svg>
+                    </div>
+                    <div class="brand-text">
+                        <h1>AvaFix Logbook</h1>
+                        <p>AVA AIRLINES CREW SYSTEM</p>
+                    </div>
+                </div>
+                <button class="btn-archive-toggle" onclick="toggleDrawer(true)">
+                    <span>📂</span>
+                    <span>سوابق ماهانه</span>
+                </button>
+            </nav>
+
+            <div class="app-wrapper">
+
+                <!-- پنل بررسی دوره ماهانه (Cockpit HUD) -->
+                <div class="hud-card">
+                    <div class="hud-title-bar">
+                        <span class="hud-label">
+                            <span class="hud-live-indicator"></span>
+                            انتخاب و مانیتورینگ دوره پروازی:
+                        </span>
+                    </div>
+
+                    <div class="date-picker-grid" style="margin-bottom: 14px;">
                         <select id="reviewYear" onchange="onReviewFilterChange()"></select>
                         <select id="reviewMonth" onchange="onReviewFilterChange()"></select>
                     </div>
-                    <div class="month-banner-row">
+
+                    <div class="hud-display-row">
                         <div>
-                            <div class="month-title" id="reviewBannerTitle">مجموع ساعات:</div>
-                            <div style="font-size:11px; color:#718096;" id="reviewGregorianPeriod">--</div>
-                        </div>
-                        <div class="month-hours" id="monthlyTotalDisplay">00:00 <span>ساعت</span></div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="section-header">
-                        <span>ثبت پرواز جدید</span>
-                        <span id="legsCountBadge" style="font-size:11px; color:var(--text-sub);">۰ لگ انتخاب‌شده</span>
-                    </div>
-
-                    <div class="form-group">
-                        <label>تاریخ پرواز (شمسی و میلادی):</label>
-                        <div class="date-grid">
-                            <select id="flightYear" onchange="updateFlightDatePreview()"></select>
-                            <select id="flightMonth" onchange="updateFlightDatePreview()"></select>
-                            <select id="flightDay" onchange="updateFlightDatePreview()"></select>
-                        </div>
-                        <div class="gregorian-badge" id="gregorianDateDisplay">Gregorian: --</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>انتخاب مسیر (FIXED TIME):</label>
-                        <select id="routeSelect">
-                            <option value="THR-MHD|105|01:45">THR ➔ MHD (تهران - مشهد) | ۰۱:۴۵</option>
-                            <option value="MHD-THR|115|01:55">MHD ➔ THR (مشهد - تهران) | ۰۱:۵۵</option>
-                            <option value="THR-GSM|145|02:25">THR ➔ GSM (تهران - قشم) | ۰۲:۲۵</option>
-                            <option value="GSM-THR|155|02:35">GSM ➔ THR (قشم - تهران) | ۰۲:۳۵</option>
-                            <option value="MHD-KSH|165|02:45">MHD ➔ KSH (مشهد - کرمانشاه) | ۰۲:۴۵</option>
-                            <option value="KSH-MHD|145|02:25">KSH ➔ MHD (کرمانشاه - مشهد) | ۰۲:۲۵</option>
-                            <option value="MHD-SYZ|155|02:35">MHD ➔ SYZ (مشهد - شیراز) | ۰۲:۳۵</option>
-                            <option value="SYZ-MHD|140|02:20">SYZ ➔ MHD (شیراز - مشهد) | ۰۲:۲۰</option>
-                            <option value="MHD-AWZ|185|03:05">MHD ➔ AWZ (مشهد - اهواز) | ۰۳:۰۵</option>
-                            <option value="AWZ-MHD|160|02:40">AWZ ➔ MHD (اهواز - مشهد) | ۰۲:۴۰</option>
-                            <option value="THR-KIH|145|02:25">THR ➔ KIH (تهران - کیش) | ۰۲:۲۵</option>
-                            <option value="KIH-THR|145|02:25">KIH ➔ THR (کیش - تهران) | ۰۲:۲۵</option>
-                            <option value="MHD-IFN|140|02:20">MHD ➔ IFN (مشهد - اصفهان) | ۰۲:۲۰</option>
-                            <option value="IFN-MHD|125|02:05">IFN ➔ MHD (اصفهان - مشهد) | ۰۲:۰۵</option>
-                            <option value="MHD-TBZ|180|03:00">MHD ➔ TBZ (مشهد - تبریز) | ۰۳:۰۰</option>
-                            <option value="TBZ-MHD|160|02:40">TBZ ➔ MHD (تبریز - مشهد) | ۰۲:۴۰</option>
-                            <option value="THR-OMH|100|01:40">THR ➔ OMH (تهران - ارومیه) | ۰۱:۴۰</option>
-                            <option value="OMH-MHD|155|02:35">OMH ➔ MHD (ارومیه - مشهد) | ۰۲:۳۵</option>
-                            <option value="MHD-OMH|185|03:05">MHD ➔ OMH (مشهد - ارومیه) | ۰۳:۰۵</option>
-                            <option value="OMH-THR|95|01:35">OMH ➔ THR (ارومیه - تهران) | ۰۱:۳۵</option>
-                            <option value="THR-ADU|80|01:20">THR ➔ ADU (تهران - اردبیل) | ۰۱:۲۰</option>
-                            <option value="ADU-MHD|145|02:25">ADU ➔ MHD (اردبیل - مشهد) | ۰۲:۲۵</option>
-                            <option value="MHD-ADU|160|02:40">MHD ➔ ADU (مشهد - اردبیل) | ۰۲:۴۰</option>
-                            <option value="ADU-THR|75|01:15">ADU ➔ THR (اردبیل - تهران) | ۰۱:۱۵</option>
-                            <option value="THR-BND|140|02:20">THR ➔ BND (تهران - بندرعباس) | ۰۲:۲۰</option>
-                            <option value="BND-THR|155|02:35">BND ➔ THR (بندرعباس - تهران) | ۰۲:۳۵</option>
-                            <option value="MHD-RAM-MHD|250|04:10">MHD ⇄ RAM (مشهد - رامسر - مشهد | رفت و برگشت) | ۰۴:۱۰</option>
-                            <option value="MHD-BGW-MHD|375|06:15">MHD ⇄ BGW (مشهد - بغداد - مشهد | رفت و برگشت) | ۰۶:۱۵</option>
-                        </select>
-                    </div>
-
-                    <button class="btn-add-leg" onclick="addLeg()">➕ اضافه کردن این لگ</button>
-
-                    <div class="legs-list" id="currentLegsList"></div>
-
-                    <div class="total-box">
-                        <span style="font-size:13px; color:var(--text-sub);">مجموع ساعات این وظیفه:</span>
-                        <span class="total-time-val" id="currentFlightTotal">00:00</span>
-                    </div>
-
-                    <button class="btn-primary" id="saveDutyBtn" onclick="saveFlightDuty()" disabled>
-                        💾 ذخیره در پرونده ماه
-                    </button>
-                </div>
-            </div>
-
-            <div id="drawerRoot">
-                <div class="drawer-overlay" onclick="toggleDrawer(false)"></div>
-                <div class="drawer-content">
-                    <div class="drawer-header">
-                        <h4 style="margin:0; font-size:15px;">بایگانی بر اساس ماه و سال</h4>
-                        <span style="cursor:pointer; font-size:20px;" onclick="toggleDrawer(false)">✕</span>
-                    </div>
-                    <div class="drawer-body" id="archiveList"></div>
-                </div>
-            </div>
-
-            <script>
-                const PERSIAN_MONTHS = [
-                    "فروردین", "اردیبهشت", "خرداد",
-                    "تیر", "مرداد", "شهریور",
-                    "مهر", "آبان", "آذر",
-                    "دی", "بهمن", "اسفند"
-                ];
-
-                const G_MONTH_NAMES = [
-                    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-                ];
-
-                function jalaliToGregorian(jy, jm, jd) {
-                    var sal_a, gy, gm, gd, days;
-                    jy += 1595;
-                    days = -355668 + (365 * jy) + Math.floor(jy / 33) * 8 + Math.floor(((jy % 33) + 3) / 4) + jd + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
-                    gy = 400 * Math.floor(days / 146097);
-                    days %= 146097;
-                    if (days > 36524) {
-                        gy += 100 * Math.floor(--days / 36524);
-                        days %= 36524;
-                        if (days >= 365) days++;
-                    }
-                    gy += 4 * Math.floor(days / 1461);
-                    days %= 1461;
-                    if (days > 365) {
-                        gy += Math.floor((days - 1) / 365);
-                        days = (days - 1) % 365;
-                    }
-                    gd = days + 1;
-                    var sal_m = [0, 31, ((gy % 4 === 0 && gy % 100 !== 0) || (gy % 400 === 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-                    for (gm = 1; gm <= 12; gm++) {
-                        if (gd <= sal_m[gm]) break;
-                        gd -= sal_m[gm];
-                    }
-                    return { gy: gy, gm: gm, gd: gd };
-                }
-
-                function formatMinutes(minutes) {
-                    const h = Math.floor(minutes / 60);
-                    const m = minutes % 60;
-                    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-                }
-
-                function initDatePickers() {
-                    const years = [];
-                    for(let y = 1405; y <= 1415; y++) years.push(y);
-
-                    const populateSelect = (id, items) => {
-                        const sel = document.getElementById(id);
-                        sel.innerHTML = items.map(item => `<option value="${item.val}">${item.text}</option>`).join('');
-                    };
-
-                    const yearItems = years.map(y => ({ val: y, text: `${y} شمسی` }));
-                    const monthItems = PERSIAN_MONTHS.map((m, idx) => ({ val: idx + 1, text: `${m}` }));
-                    
-                    const dayItems = [];
-                    for(let d = 1; d <= 31; d++) dayItems.push({ val: d, text: `${d}` });
-
-                    populateSelect('reviewYear', yearItems);
-                    populateSelect('reviewMonth', monthItems);
-
-                    populateSelect('flightYear', yearItems);
-                    populateSelect('flightMonth', monthItems);
-                    populateSelect('flightDay', dayItems);
-
-                    updateFlightDatePreview();
-                    onReviewFilterChange();
-                }
-
-                function updateFlightDatePreview() {
-                    const jy = parseInt(document.getElementById('flightYear').value);
-                    const jm = parseInt(document.getElementById('flightMonth').value);
-                    const jd = parseInt(document.getElementById('flightDay').value);
-
-                    const g = jalaliToGregorian(jy, jm, jd);
-                    const gStr = `${g.gy}-${String(g.gm).padStart(2,'0')}-${String(g.gd).padStart(2,'0')} (${g.gd} ${G_MONTH_NAMES[g.gm - 1]} ${g.gy})`;
-                    document.getElementById('gregorianDateDisplay').textContent = `معادل میلادی: ${gStr}`;
-                }
-
-                let currentLegs = [];
-
-                function addLeg() {
-                    const sel = document.getElementById('routeSelect');
-                    const parts = sel.value.split('|');
-                    const routeName = parts[0];
-                    const minutes = parseInt(parts[1], 10);
-                    const fixedTime = parts[2];
-
-                    currentLegs.push({
-                        route: routeName,
-                        minutes: minutes,
-                        fixedTime: fixedTime
-                    });
-
-                    renderCurrentLegs();
-                }
-
-                function removeLeg(index) {
-                    currentLegs.splice(index, 1);
-                    renderCurrentLegs();
-                }
-
-                function renderCurrentLegs() {
-                    const listContainer = document.getElementById('currentLegsList');
-                    const totalDisplay = document.getElementById('currentFlightTotal');
-                    const legsBadge = document.getElementById('legsCountBadge');
-                    const saveBtn = document.getElementById('saveDutyBtn');
-
-                    if (currentLegs.length === 0) {
-                        listContainer.innerHTML = '';
-                        totalDisplay.textContent = '00:00';
-                        legsBadge.textContent = '۰ لگ انتخاب‌شده';
-                        saveBtn.disabled = true;
-                        return;
-                    }
-
-                    saveBtn.disabled = false;
-                    legsBadge.textContent = `${currentLegs.length} لگ پروازی`;
-
-                    let sumMin = 0;
-                    listContainer.innerHTML = currentLegs.map((leg, idx) => {
-                        sumMin += leg.minutes;
-                        return `
-                            <div class="leg-row">
-                                <div>
-                                    <span style="font-weight:bold;">لگ ${idx + 1}: ${leg.route}</span>
-                                </div>
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <span class="leg-badge">${leg.fixedTime}</span>
-                                    <button class="btn-remove-leg" onclick="removeLeg(${idx})">✕</button>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-
-                    totalDisplay.textContent = formatMinutes(sumMin);
-                }
-
-                function getDuties() {
-                    return JSON.parse(localStorage.getItem('avafix_monthly_duties') || '[]');
-                }
-
-                function saveFlightDuty() {
-                    if (currentLegs.length === 0) return;
-
-                    const jy = parseInt(document.getElementById('flightYear').value);
-                    const jm = parseInt(document.getElementById('flightMonth').value);
-                    const jd = parseInt(document.getElementById('flightDay').value);
-
-                    const g = jalaliToGregorian(jy, jm, jd);
-                    const gDateStr = `${g.gy}-${String(g.gm).padStart(2,'0')}-${String(g.gd).padStart(2,'0')}`;
-                    const shamsiDateStr = `${jy}/${String(jm).padStart(2,'0')}/${String(jd).padStart(2,'0')}`;
-
-                    const periodKey = `${jy}-${String(jm).padStart(2,'0')}`;
-                    const periodTitle = `${PERSIAN_MONTHS[jm - 1]} ${jy}`;
-
-                    const totalMinutes = currentLegs.reduce((sum, leg) => sum + leg.minutes, 0);
-
-                    const duty = {
-                        id: Date.now(),
-                        year: jy,
-                        month: jm,
-                        periodKey: periodKey,
-                        periodTitle: periodTitle,
-                        dateShamsi: shamsiDateStr,
-                        dateGregorian: gDateStr,
-                        legs: [...currentLegs],
-                        totalMinutes: totalMinutes,
-                        totalFixedTime: formatMinutes(totalMinutes)
-                    };
-
-                    const duties = getDuties();
-                    duties.unshift(duty);
-                    localStorage.setItem('avafix_monthly_duties', JSON.stringify(duties));
-
-                    document.getElementById('reviewYear').value = jy;
-                    document.getElementById('reviewMonth').value = jm;
-                    onReviewFilterChange();
-
-                    currentLegs = [];
-                    renderCurrentLegs();
-                    toggleDrawer(true);
-                }
-
-                function deleteDuty(id) {
-                    let duties = getDuties();
-                    duties = duties.filter(d => d.id !== id);
-                    localStorage.setItem('avafix_monthly_duties', JSON.stringify(duties));
-                    onReviewFilterChange();
-                    renderArchive();
-                }
-
-                function onReviewFilterChange() {
-                    const selYear = parseInt(document.getElementById('reviewYear').value);
-                    const selMonth = parseInt(document.getElementById('reviewMonth').value);
-                    const targetPeriodKey = `${selYear}-${String(selMonth).padStart(2,'0')}`;
-                    const targetTitle = `${PERSIAN_MONTHS[selMonth - 1]} ${selYear}`;
-
-                    const gStart = jalaliToGregorian(selYear, selMonth, 1);
-                    const gEnd = jalaliToGregorian(selYear, selMonth, selMonth <= 6 ? 31 : 30);
-                    const gPeriodText = `${G_MONTH_NAMES[gStart.gm - 1]} ${gStart.gy} / ${G_MONTH_NAMES[gEnd.gm - 1]} ${gEnd.gy}`;
-
-                    document.getElementById('reviewBannerTitle').textContent = `مجموع پروازهای ${targetTitle}:`;
-                    document.getElementById('reviewGregorianPeriod').textContent = `دوره میلادی: ${gPeriodText}`;
-
-                    const duties = getDuties();
-                    const monthTotalMin = duties
-                        .filter(d => d.periodKey === targetPeriodKey)
-                        .reduce((acc, d) => acc + d.totalMinutes, 0);
-
-                    document.getElementById('monthlyTotalDisplay').innerHTML = 
-                        `${formatMinutes(monthTotalMin)} <span>ساعت</span>`;
-                }
-
-                function toggleDrawer(open) {
-                    const root = document.getElementById('drawerRoot');
-                    if(open) {
-                        root.classList.add('drawer-open');
-                        renderArchive();
-                    } else {
-                        root.classList.remove('drawer-open');
-                    }
-                }
-
-                function renderArchive() {
-                    const duties = getDuties();
-                    const container = document.getElementById('archiveList');
-
-                    if(duties.length === 0) {
-                        container.innerHTML = '<div style="color:#718096; text-align:center; padding:25px 0;">هیچ پروازی در لاگ‌بوک ثبت نشده است.</div>';
-                        return;
-                    }
-
-                    const groups = {};
-                    duties.forEach(d => {
-                        if(!groups[d.periodKey]) {
-                            groups[d.periodKey] = {
-                                title: d.periodTitle,
-                                totalMinutes: 0,
-                                list: []
-                            };
-                        }
-                        groups[d.periodKey].totalMinutes += d.totalMinutes;
-                        groups[d.periodKey].list.push(d);
-                    });
-
-                    const sortedKeys = Object.keys(groups).sort().reverse();
-
-                    container.innerHTML = sortedKeys.map(key => {
-                        const g = groups[key];
-                        return `
-                            <div class="month-group-card">
-                                <div class="month-group-header">
-                                    <span>📁 ${g.title}</span>
-                                    <span style="color:#68D391;">مجموع: ${formatMinutes(g.totalMinutes)}</span>
-                                </div>
-                                <div>
-                                    ${g.list.map(duty => `
-                                        <div class="archive-item">
-                                            <div class="archive-item-top">
-                                                <div>
-                                                    <span style="font-size:12px; font-weight:bold; color:#E2E8F0;">📅 ${duty.dateShamsi}</span>
-                                                    <span style="font-size:10px; color:#A0AEC0; margin-right:4px;">(${duty.dateGregorian})</span>
-                                                </div>
-                                                <div style="display:flex; align-items:center; gap:8px;">
-                                                    <span style="font-size:13px; font-weight:bold; color:#FF6B6B;">${duty.totalFixedTime}</span>
-                                                    <button class="btn-del" onclick="deleteDuty(${duty.id})">حذف</button>
-                                                </div>
-                                            </div>
-                                            <div>
-                                                ${duty.legs.map((l, i) => `
-                                                    <div class="archive-leg-detail">
-                                                        <span>لگ ${i+1}: ${l.route}</span>
-                                                        <span>${l.fixedTime}</span>
-                                                    </div>
-                                                `).join('')}
-                                            </div>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                }
-
-                window.onload = function() {
-                    initDatePickers();
-                };
-            </script>
-        </body>
-        </html>
-        EOF
-
-    - name: Build Signed APK
-      run: gradle assembleRelease --no-daemon
-
-    - name: Upload Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: AvaFix-v3.0-APK
-        path: app/build/outputs/apk/release/*.apk
-        if-no-files-found: error
+                            <div class="hud
