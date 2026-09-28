@@ -1,308 +1,2040 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AvaFix Logbook</title>
-    <style>
-        :root {
-            --bg-cockpit: #060911;
-            --panel-bg: rgba(16, 23, 41, 0.75);
-            --panel-border: rgba(56, 189, 248, 0.15);
-            --ava-red: #E11D48;
-            --ava-red-glow: rgba(225, 29, 72, 0.35);
-            --hud-green: #10B981;
-            --hud-green-glow: rgba(16, 185, 129, 0.25);
-            --hud-cyan: #38BDF8;
-            --text-primary: #F8FAFC;
-            --text-secondary: #94A3B8;
-            --input-bg: rgba(8, 12, 22, 0.85);
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Vazirmatn, Tahoma, sans-serif;
-            -webkit-tap-highlight-color: transparent;
-        }
+  <title>AvaFix Flight Logbook</title>
 
-        body {
-            background: radial-gradient(circle at 50% 0%, #111827 0%, #060911 100%);
-            color: var(--text-primary);
-            min-height: 100vh;
-            padding-bottom: 40px;
-        }
+  <style>
+    :root {
+      --bg-dark: #0a0f1d;
+      --card-bg: #131c31;
+      --card-border: #223055;
 
-        /* نوار بالای کابین */
-        header {
-            background: rgba(11, 17, 33, 0.9);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(225, 29, 72, 0.4);
-            padding: 14px 18px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
 
-        .brand-title {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 800;
-            font-size: 1.15rem;
-            letter-spacing: 0.5px;
-        }
+      --accent: #f59e0b;
+      --success: #10b981;
+      --danger: #ef4444;
 
-        .badge-ava {
-            background: linear-gradient(135deg, #E11D48, #9F1239);
-            color: #FFF;
-            font-size: 0.7rem;
-            font-weight: 900;
-            padding: 3px 8px;
-            border-radius: 6px;
-            box-shadow: 0 0 10px var(--ava-red-glow);
-        }
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
 
-        .btn-history-top {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid var(--panel-border);
-            color: var(--hud-cyan);
-            font-size: 0.8rem;
-            font-weight: 600;
-            padding: 6px 12px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
+      --input-bg: #0d1527;
 
-        .container {
-            max-width: 480px;
-            margin: 0 auto;
-            padding: 16px;
-        }
+      --font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        "Vazirmatn",
+        Tahoma,
+        sans-serif;
+    }
 
-        /* کارت‌های شیشه‌ای اویونیک */
-        .hud-card {
-            background: var(--panel-bg);
-            backdrop-filter: blur(16px);
-            border: 1px solid var(--panel-border);
-            border-radius: 16px;
-            padding: 18px;
-            margin-bottom: 16px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
-        }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
 
-        .card-header-label {
-            font-size: 0.82rem;
-            color: var(--text-secondary);
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    body {
+      background: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-family);
+      min-height: 100vh;
+      padding-bottom: 40px;
+    }
 
-        .date-selectors {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 14px;
-        }
+    /* =========================
+       HEADER
+    ========================== */
 
-        select, input[type="text"] {
-            width: 100%;
-            background: var(--input-bg);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 10px;
-            color: #FFF;
-            padding: 11px 14px;
-            font-size: 0.9rem;
-            outline: none;
-            transition: all 0.2s ease;
-        }
+    header {
+      background:
+        linear-gradient(
+          180deg,
+          #131d36 0%,
+          #0a0f1d 100%
+        );
 
-        select:focus, input[type="text"]:focus {
-            border-color: var(--hud-cyan);
-            box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
-        }
+      padding: 18px 20px;
 
-        /* باکس نمایشگر ساعات پرواز */
-        .digital-gauge {
-            background: rgba(4, 7, 15, 0.9);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            border-radius: 12px;
-            padding: 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 10px;
-        }
+      border-bottom:
+        1px solid var(--card-border);
 
-        .gauge-time {
-            font-family: "Courier New", Courier, monospace;
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: var(--hud-green);
-            text-shadow: 0 0 12px var(--hud-green-glow);
-            letter-spacing: 2px;
-            direction: ltr;
-        }
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
 
-        .gauge-unit {
-            font-size: 0.75rem;
-            color: #F43F5E;
-            margin-right: 6px;
-        }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
 
-        /* ساب باکس معادل میلادی */
-        .miladi-pill {
-            background: rgba(14, 165, 233, 0.08);
-            border: 1px solid rgba(14, 165, 233, 0.25);
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 0.8rem;
-            color: var(--hud-cyan);
-            text-align: center;
-            margin-bottom: 14px;
-            direction: ltr;
-            font-family: monospace;
-        }
+    .brand-icon {
+      font-size: 1.8rem;
+    }
 
-        /* دکمه افزودن لگ */
-        .btn-add-leg {
-            width: 100%;
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px dashed rgba(56, 189, 248, 0.4);
-            color: var(--hud-cyan);
-            padding: 13px;
-            border-radius: 10px;
-            font-size: 0.92rem;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 14px;
-            transition: all 0.2s ease;
-        }
+    .brand-title {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: white;
+    }
 
-        .btn-add-leg:active {
-            background: rgba(56, 189, 248, 0.15);
-            transform: scale(0.99);
-        }
+    .brand-subtitle {
+      font-size: 0.75rem;
+      color: var(--primary);
+      margin-top: 2px;
+    }
 
-        /* دکمه ذخیره در پرونده ماه */
-        .btn-save-duty {
-            width: 100%;
-            background: linear-gradient(135deg, #E11D48 0%, #BE123C 100%);
-            border: none;
-            color: #FFF;
-            padding: 14px;
-            border-radius: 12px;
-            font-size: 0.96rem;
-            font-weight: 800;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 14px;
-            box-shadow: 0 4px 16px var(--ava-red-glow);
-            transition: all 0.2s ease;
-        }
+    /* =========================
+       MAIN
+    ========================== */
 
-        .btn-save-duty:active {
-            filter: brightness(0.9);
-            transform: scale(0.99);
-        }
-    </style>
+    main {
+      width: 100%;
+      max-width: 620px;
+      margin: auto;
+      padding: 15px;
+
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--card-bg);
+
+      border:
+        1px solid var(--card-border);
+
+      border-radius: 14px;
+
+      padding: 16px;
+
+      box-shadow:
+        0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+
+      color: var(--primary);
+
+      margin-bottom: 14px;
+
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    /* =========================
+       DASHBOARD
+    ========================== */
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .stat {
+      background: #090e1a;
+
+      border:
+        1px solid #1a2542;
+
+      border-radius: 10px;
+
+      padding: 13px;
+
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .stat-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .stat-primary {
+      color: var(--primary);
+    }
+
+    /* =========================
+       FORM
+    ========================== */
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .form-group label {
+      font-size: 0.83rem;
+      color: var(--text-muted);
+    }
+
+    input {
+      background: var(--input-bg);
+
+      border:
+        1px solid #2d3f6d;
+
+      border-radius: 8px;
+
+      color: white;
+
+      padding: 11px 12px;
+
+      font-family: inherit;
+
+      font-size: 0.95rem;
+
+      width: 100%;
+
+      outline: none;
+
+      transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+
+      box-shadow:
+        0 0 0 2px rgba(56,189,248,0.08);
+    }
+
+    .route-row {
+      display: grid;
+
+      grid-template-columns:
+        1fr
+        auto
+        1fr;
+
+      gap: 8px;
+
+      align-items: end;
+    }
+
+    .route-arrow {
+      height: 44px;
+
+      display: flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      color: var(--primary);
+
+      font-size: 1.3rem;
+    }
+
+    /* =========================
+       BUTTONS
+    ========================== */
+
+    .btn {
+      display: inline-flex;
+
+      align-items: center;
+
+      justify-content: center;
+
+      gap: 6px;
+
+      padding: 11px 14px;
+
+      border-radius: 8px;
+
+      border: none;
+
+      font-family: inherit;
+
+      font-size: 0.9rem;
+
+      font-weight: 700;
+
+      cursor: pointer;
+
+      transition: 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #001018;
+    }
+
+    .btn-primary:active {
+      background: var(--primary-hover);
+    }
+
+    .btn-secondary {
+      background: #1e293b;
+      color: #cbd5e1;
+
+      border:
+        1px solid #334155;
+    }
+
+    .btn-danger {
+      background:
+        rgba(239,68,68,0.12);
+
+      color: #f87171;
+
+      border:
+        1px solid rgba(239,68,68,0.3);
+    }
+
+    .btn-small {
+      padding: 6px 9px;
+      font-size: 0.75rem;
+    }
+
+    /* =========================
+       ADD FLIGHT
+    ========================== */
+
+    .flight-preview {
+      margin-top: 10px;
+
+      background: #090e1a;
+
+      border:
+        1px solid #1a2542;
+
+      border-radius: 9px;
+
+      padding: 12px;
+
+      display: none;
+
+      text-align: center;
+    }
+
+    .flight-route {
+      font-size: 1.2rem;
+      font-weight: 800;
+
+      color: white;
+    }
+
+    .flight-duration {
+      color: var(--accent);
+
+      font-size: 1rem;
+
+      font-weight: 700;
+
+      margin-top: 4px;
+    }
+
+    /* =========================
+       FILTER
+    ========================== */
+
+    .filter-row {
+      display: grid;
+
+      grid-template-columns:
+        1fr
+        1fr;
+
+      gap: 8px;
+
+      margin-bottom: 12px;
+    }
+
+    /* =========================
+       HISTORY
+    ========================== */
+
+    .flight-record {
+      background: #0d1527;
+
+      border:
+        1px solid #1f2d50;
+
+      border-radius: 10px;
+
+      padding: 12px;
+
+      margin-bottom: 8px;
+    }
+
+    .record-top {
+      display: flex;
+
+      justify-content: space-between;
+
+      align-items: center;
+
+      gap: 10px;
+    }
+
+    .record-date {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .record-duration {
+      color: var(--accent);
+
+      font-size: 1rem;
+
+      font-weight: 800;
+    }
+
+    .record-route {
+      font-size: 1rem;
+
+      font-weight: 800;
+
+      margin-top: 7px;
+
+      direction: ltr;
+
+      text-align: center;
+    }
+
+    .record-gregorian {
+      font-size: 0.7rem;
+
+      color: #64748b;
+
+      text-align: center;
+
+      margin-top: 4px;
+
+      direction: ltr;
+    }
+
+    .record-actions {
+      display: flex;
+
+      justify-content: flex-end;
+
+      gap: 5px;
+
+      margin-top: 9px;
+    }
+
+    /* =========================
+       EMPTY
+    ========================== */
+
+    .empty {
+      text-align: center;
+
+      color: var(--text-muted);
+
+      font-size: 0.85rem;
+
+      padding: 22px 10px;
+    }
+
+    /* =========================
+       TOTAL
+    ========================== */
+
+    .total-box {
+      background:
+        linear-gradient(
+          135deg,
+          #0d2035,
+          #090e1a
+        );
+
+      border:
+        1px solid #244568;
+
+      border-radius: 12px;
+
+      padding: 15px;
+
+      text-align: center;
+
+      margin-bottom: 12px;
+    }
+
+    .total-label {
+      color: var(--text-muted);
+
+      font-size: 0.8rem;
+    }
+
+    .total-value {
+      color: var(--primary);
+
+      font-size: 1.7rem;
+
+      font-weight: 900;
+
+      margin-top: 4px;
+    }
+
+    /* =========================
+       MODAL
+    ========================== */
+
+    .modal-overlay {
+      display: none;
+
+      position: fixed;
+
+      inset: 0;
+
+      background:
+        rgba(0,0,0,0.72);
+
+      backdrop-filter: blur(4px);
+
+      z-index: 1000;
+
+      align-items: center;
+
+      justify-content: center;
+
+      padding: 15px;
+    }
+
+    .modal-box {
+      background: var(--card-bg);
+
+      border:
+        1px solid var(--card-border);
+
+      border-radius: 14px;
+
+      width: 100%;
+
+      max-width: 430px;
+
+      padding: 18px;
+
+      box-shadow:
+        0 15px 40px rgba(0,0,0,0.6);
+    }
+
+    .modal-title {
+      font-size: 1rem;
+
+      color: var(--primary);
+
+      margin-bottom: 14px;
+    }
+
+    /* =========================
+       RESPONSIVE
+    ========================== */
+
+    @media (max-width: 430px) {
+
+      .route-row {
+        grid-template-columns: 1fr;
+      }
+
+      .route-arrow {
+        height: 20px;
+        transform: rotate(90deg);
+      }
+
+      .dashboard {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-    <header>
-        <button class="btn-history-top">سوابق ماهانه 📁</button>
-        <div class="brand-title">
-            <span>AvaFix Logbook</span>
-            <span class="badge-ava">AVA</span>
-        </div>
-    </header>
+<header>
 
-    <div class="container">
-        <!-- کارت انتخاب دوره و سرجمع ساعات ماه -->
-        <div class="hud-card">
-            <div class="card-header-label">
-                <span>انتخاب دوره جهت محاسبه و بررسی:</span>
-            </div>
-            <div class="date-selectors">
-                <select id="monthSelect">
-                    <option value="6">شهریور</option>
-                    <option value="7">مهر</option>
-                    <option value="8">آبان</option>
-                </select>
-                <select id="yearSelect">
-                    <option value="1405">1405 شمسی</option>
-                    <option value="1404">1404 شمسی</option>
-                </select>
-            </div>
+  <div class="brand">
 
-            <div class="digital-gauge">
-                <div>
-                    <div style="font-size: 0.85rem; font-weight: 700; color: #E2E8F0;">مجموع پروازهای شهریور 1405:</div>
-                    <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 2px;">دوره میلادی: Aug 2026 / Sep 2026</div>
-                </div>
-                <div style="display: flex; align-items: baseline;">
-                    <span class="gauge-unit">ساعت</span>
-                    <span class="gauge-time" id="monthlyTotalDisplay">00:00</span>
-                </div>
-            </div>
-        </div>
+    <span class="brand-icon">✈️</span>
 
-        <!-- کارت ثبت پرواز جدید -->
-        <div class="hud-card">
-            <div class="card-header-label">
-                <span style="color: #FFF; font-weight: 700; font-size: 0.95rem;">ثبت پرواز جدید</span>
-                <span style="font-size: 0.75rem; color: var(--hud-cyan);" id="selectedLegsCounter">۰ لگ انتخاب‌شده</span>
-            </div>
+    <div>
 
-            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 6px;">تاریخ پرواز (شمسی و میلادی):</div>
-            <div class="date-selectors" style="grid-template-columns: 2fr 1fr 1fr; margin-bottom: 8px;">
-                <select id="dutyYear"><option>1405 شمسی</option></select>
-                <select id="dutyMonth"><option>شهریور</option></select>
-                <select id="dutyDay"><option>1</option></select>
-            </div>
+      <div class="brand-title">
+        AvaFix Logbook
+      </div>
 
-            <div class="miladi-pill">
-                (23 Aug 2026) معادل میلادی: 2026-08-23
-            </div>
+      <div class="brand-subtitle">
+        Flight Logbook
+      </div>
 
-            <div style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 6px;">انتخاب مسیر (FIXED TIME):</div>
-            <select id="routePicker">
-                <option value="02:45">MHD ➔ KSH (مشهد - کرمانشاه) | ۰۲:۴۵</option>
-                <option value="01:15">THR ➔ MHD (تهران - مشهد) | ۰۱:۱۵</option>
-                <option value="01:10">THR ➔ SYZ (تهران - شیراز) | ۰۱:۱۰</option>
-                <option value="01:40">THR ➔ KIH (تهران - کیش) | ۰۱:۴۰</option>
-            </select>
-
-            <button class="btn-add-leg">
-                <span>➕</span> اضافه کردن این لگ
-            </button>
-
-            <!-- مجموع ساعات این وظیفه -->
-            <div class="digital-gauge" style="margin-top: 14px;">
-                <span style="font-size: 0.85rem; color: #CBD5E1;">مجموع ساعات این وظیفه:</span>
-                <span class="gauge-time" id="dutyTotalDisplay">00:00</span>
-            </div>
-
-            <button class="btn-save-duty">
-                <span>💾</span> ذخیره در پرونده ماه
-            </button>
-        </div>
     </div>
+
+  </div>
+
+</header>
+
+
+<main>
+
+  <!-- =========================
+       DASHBOARD
+  ========================== -->
+
+  <div class="card">
+
+    <div class="card-title">
+      📊 خلاصه پرواز
+    </div>
+
+    <div class="dashboard">
+
+      <div class="stat">
+
+        <div class="stat-label">
+          تعداد کل پرواز
+        </div>
+
+        <div
+          id="totalFlights"
+          class="stat-value stat-primary">
+          ۰
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div class="stat-label">
+          مجموع کل پرواز
+        </div>
+
+        <div
+          id="totalFlightTime"
+          class="stat-value">
+          ۰۰:۰۰
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div class="stat-label">
+          پروازهای امسال
+        </div>
+
+        <div
+          id="yearFlights"
+          class="stat-value stat-primary">
+          ۰
+        </div>
+
+      </div>
+
+
+      <div class="stat">
+
+        <div class="stat-label">
+          ساعت امسال
+        </div>
+
+        <div
+          id="yearFlightTime"
+          class="stat-value">
+          ۰۰:۰۰
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================
+       ADD FLIGHT
+  ========================== -->
+
+  <div class="card">
+
+    <div class="card-title">
+      📝 ثبت پرواز جدید
+    </div>
+
+
+    <div class="form-group">
+
+      <label>
+        تاریخ پرواز
+      </label>
+
+      <input
+        id="flightDate"
+        type="text"
+        placeholder="مثال: ۱۴۰۵/۰۷/۰۷">
+
+    </div>
+
+
+    <div class="route-row">
+
+      <div class="form-group">
+
+        <label>
+          🛫 مبدأ
+        </label>
+
+        <input
+          id="origin"
+          type="text"
+          maxlength="4"
+          placeholder="MHD"
+          autocomplete="off">
+
+      </div>
+
+
+      <div class="route-arrow">
+        ➜
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          🛬 مقصد
+        </label>
+
+        <input
+          id="destination"
+          type="text"
+          maxlength="4"
+          placeholder="BGW"
+          autocomplete="off">
+
+      </div>
+
+    </div>
+
+
+    <div class="form-group">
+
+      <label>
+        ⏱️ مدت پرواز
+      </label>
+
+      <input
+        id="duration"
+        type="text"
+        inputmode="numeric"
+        placeholder="مثال: 01:35">
+
+    </div>
+
+
+    <div
+      id="flightPreview"
+      class="flight-preview">
+
+      <div
+        id="previewRoute"
+        class="flight-route">
+      </div>
+
+      <div
+        id="previewDuration"
+        class="flight-duration">
+      </div>
+
+    </div>
+
+
+    <button
+      id="btnSaveFlight"
+      class="btn btn-primary"
+      style="width:100%; margin-top:8px;">
+
+      ✈️ ثبت پرواز
+
+    </button>
+
+  </div>
+
+
+  <!-- =========================
+       HISTORY
+  ========================== -->
+
+  <div class="card">
+
+    <div class="card-title">
+      📚 آرشیو پروازها
+    </div>
+
+
+    <div class="filter-row">
+
+      <input
+        id="filterMonth"
+        type="month"
+        title="فیلتر ماه">
+
+      <button
+        id="btnClearFilter"
+        class="btn btn-secondary">
+
+        نمایش همه
+
+      </button>
+
+    </div>
+
+
+    <div class="total-box">
+
+      <div class="total-label">
+        مجموع پروازهای نمایش‌داده‌شده
+      </div>
+
+      <div
+        id="filteredTotal"
+        class="total-value">
+
+        ۰۰:۰۰
+
+      </div>
+
+    </div>
+
+
+    <div id="historyList"></div>
+
+  </div>
+
+</main>
+
+
+<!-- =========================
+     EDIT MODAL
+========================== -->
+
+<div
+  id="editModal"
+  class="modal-overlay">
+
+  <div class="modal-box">
+
+    <div class="modal-title">
+      ✏️ ویرایش پرواز
+    </div>
+
+
+    <input
+      type="hidden"
+      id="editId">
+
+
+    <div class="form-group">
+
+      <label>
+        تاریخ
+      </label>
+
+      <input
+        id="editDate"
+        type="text">
+
+    </div>
+
+
+    <div class="route-row">
+
+      <div class="form-group">
+
+        <label>
+          مبدأ
+        </label>
+
+        <input
+          id="editOrigin"
+          maxlength="4">
+
+      </div>
+
+
+      <div class="route-arrow">
+        ➜
+      </div>
+
+
+      <div class="form-group">
+
+        <label>
+          مقصد
+        </label>
+
+        <input
+          id="editDestination"
+          maxlength="4">
+
+      </div>
+
+    </div>
+
+
+    <div class="form-group">
+
+      <label>
+        مدت پرواز
+      </label>
+
+      <input
+        id="editDuration"
+        inputmode="numeric">
+
+    </div>
+
+
+    <div style="
+      display:flex;
+      gap:8px;
+      margin-top:10px;
+    ">
+
+      <button
+        id="btnCancelEdit"
+        class="btn btn-secondary"
+        style="flex:1;">
+
+        انصراف
+
+      </button>
+
+      <button
+        id="btnUpdateFlight"
+        class="btn btn-primary"
+        style="flex:1;">
+
+        ذخیره تغییرات
+
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+  /*
+   * ==========================================
+   * STORAGE
+   * ==========================================
+   */
+
+  const STORAGE_KEY =
+    "avafix_flight_logbook_v2";
+
+
+  let flights = [];
+
+
+  /*
+   * ==========================================
+   * UTILITIES
+   * ==========================================
+   */
+
+  function toEnglishDigits(value) {
+
+    if (!value) return "";
+
+    return value
+      .toString()
+      .replace(/[۰-۹]/g, d =>
+        "۰۱۲۳۴۵۶۷۸۹".indexOf(d)
+      )
+      .replace(/[٠-٩]/g, d =>
+        "٠١٢٣٤٥٦٧٨٩".indexOf(d)
+      );
+
+  }
+
+
+  function toPersianDigits(value) {
+
+    return value
+      .toString()
+      .replace(/\d/g, d =>
+        "۰۱۲۳۴۵۶۷۸۹"[d]
+      );
+
+  }
+
+
+  /*
+   * ==========================================
+   * DATE
+   * ==========================================
+   *
+   * fa-IR normally gives Solar Hijri display.
+   * We also store an ISO/Gregorian date internally.
+   *
+   * ==========================================
+   */
+
+  function getTodayPersian() {
+
+    return new Intl.DateTimeFormat(
+      "fa-IR-u-ca-persian",
+      {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }
+    ).format(new Date());
+
+  }
+
+
+  function getTodayGregorianISO() {
+
+    const d = new Date();
+
+    return [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, "0"),
+      String(d.getDate()).padStart(2, "0")
+    ].join("-");
+
+  }
+
+
+  function normalizePersianDate(value) {
+
+    return toEnglishDigits(value)
+      .replace(/-/g, "/")
+      .replace(/\s/g, "");
+
+  }
+
+
+  /*
+   * ==========================================
+   * TIME
+   * ==========================================
+   */
+
+  function parseDuration(value) {
+
+    if (!value) return 0;
+
+    value = toEnglishDigits(value)
+      .trim()
+      .replace("٫", ":")
+      .replace(".", ":");
+
+
+    if (value.includes(":")) {
+
+      const parts = value.split(":");
+
+      const hours =
+        parseInt(parts[0], 10);
+
+      const minutes =
+        parseInt(parts[1], 10);
+
+
+      if (
+        Number.isNaN(hours) ||
+        Number.isNaN(minutes) ||
+        minutes > 59
+      ) {
+        return 0;
+      }
+
+      return hours * 60 + minutes;
+
+    }
+
+
+    /*
+     * اگر فقط عدد وارد شود،
+     * آن را دقیقه در نظر می‌گیریم.
+     */
+
+    const minutes =
+      parseInt(value, 10);
+
+    return Number.isNaN(minutes)
+      ? 0
+      : minutes;
+
+  }
+
+
+  function formatDuration(minutes) {
+
+    minutes =
+      Math.max(
+        0,
+        Number(minutes) || 0
+      );
+
+    const hours =
+      Math.floor(minutes / 60);
+
+    const mins =
+      minutes % 60;
+
+
+    return (
+      String(hours).padStart(2, "0")
+      + ":"
+      + String(mins).padStart(2, "0")
+    );
+
+  }
+
+
+  function formatDurationPersian(minutes) {
+
+    return toPersianDigits(
+      formatDuration(minutes)
+    );
+
+  }
+
+
+  /*
+   * ==========================================
+   * ID
+   * ==========================================
+   */
+
+  function createId() {
+
+    return (
+      Date.now().toString(36)
+      +
+      Math.random()
+        .toString(36)
+        .substring(2, 8)
+    );
+
+  }
+
+
+  /*
+   * ==========================================
+   * STORAGE
+   * ==========================================
+   */
+
+  function saveFlights() {
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(flights)
+    );
+
+  }
+
+
+  function loadFlights() {
+
+    const saved =
+      localStorage.getItem(STORAGE_KEY);
+
+
+    if (!saved) {
+
+      flights = [];
+
+      return;
+
+    }
+
+
+    try {
+
+      flights =
+        JSON.parse(saved);
+
+      if (!Array.isArray(flights)) {
+
+        flights = [];
+
+      }
+
+    } catch (error) {
+
+      console.error(error);
+
+      flights = [];
+
+    }
+
+  }
+
+
+  /*
+   * ==========================================
+   * CURRENT YEAR
+   * ==========================================
+   */
+
+  function getCurrentPersianYear() {
+
+    const date =
+      getTodayPersian();
+
+    return normalizePersianDate(date)
+      .split("/")[0];
+
+  }
+
+
+  /*
+   * ==========================================
+   * ADD FLIGHT
+   * ==========================================
+   */
+
+  function saveNewFlight() {
+
+    const dateInput =
+      document
+        .getElementById("flightDate")
+        .value
+        .trim();
+
+
+    const origin =
+      document
+        .getElementById("origin")
+        .value
+        .trim()
+        .toUpperCase();
+
+
+    const destination =
+      document
+        .getElementById("destination")
+        .value
+        .trim()
+        .toUpperCase();
+
+
+    const durationInput =
+      document
+        .getElementById("duration")
+        .value
+        .trim();
+
+
+    const date =
+      normalizePersianDate(
+        dateInput || getTodayPersian()
+      );
+
+
+    const minutes =
+      parseDuration(durationInput);
+
+
+    if (!date) {
+
+      alert("لطفاً تاریخ پرواز را وارد کنید.");
+
+      return;
+
+    }
+
+
+    if (!origin || !destination) {
+
+      alert("لطفاً مبدأ و مقصد را وارد کنید.");
+
+      return;
+
+    }
+
+
+    if (origin.length < 3 ||
+        destination.length < 3) {
+
+      alert(
+        "کد مبدأ و مقصد باید حداقل ۳ حرف داشته باشد."
+      );
+
+      return;
+
+    }
+
+
+    if (minutes <= 0) {
+
+      alert(
+        "مدت پرواز معتبر نیست.\nمثال: 01:35"
+      );
+
+      return;
+
+    }
+
+
+    const flight = {
+
+      id: createId(),
+
+      datePersian: date,
+
+      dateGregorian:
+        getTodayGregorianISO(),
+
+      origin,
+
+      destination,
+
+      minutes
+
+    };
+
+
+    flights.unshift(flight);
+
+    saveFlights();
+
+
+    /*
+     * پاک کردن فرم
+     */
+
+    document
+      .getElementById("origin")
+      .value = "";
+
+    document
+      .getElementById("destination")
+      .value = "";
+
+    document
+      .getElementById("duration")
+      .value = "";
+
+
+    updatePreview();
+
+    renderAll();
+
+
+    alert(
+      "پرواز با موفقیت ثبت شد ✈️"
+    );
+
+  }
+
+
+  /*
+   * ==========================================
+   * PREVIEW
+   * ==========================================
+   */
+
+  function updatePreview() {
+
+    const origin =
+      document
+        .getElementById("origin")
+        .value
+        .trim()
+        .toUpperCase();
+
+
+    const destination =
+      document
+        .getElementById("destination")
+        .value
+        .trim()
+        .toUpperCase();
+
+
+    const duration =
+      parseDuration(
+        document
+          .getElementById("duration")
+          .value
+      );
+
+
+    const preview =
+      document
+        .getElementById("flightPreview");
+
+
+    if (
+      origin &&
+      destination &&
+      duration > 0
+    ) {
+
+      preview.style.display = "block";
+
+
+      document
+        .getElementById("previewRoute")
+        .textContent =
+        `${origin} → ${destination}`;
+
+
+      document
+        .getElementById("previewDuration")
+        .textContent =
+        `⏱ ${formatDurationPersian(duration)}`;
+
+    } else {
+
+      preview.style.display = "none";
+
+    }
+
+  }
+
+
+  /*
+   * ==========================================
+   * FILTER
+   * ==========================================
+   */
+
+  function getFilteredFlights() {
+
+    const filter =
+      document
+        .getElementById("filterMonth")
+        .value;
+
+
+    if (!filter) {
+
+      return [...flights];
+
+    }
+
+
+    /*
+     * filterMonth میلادی است.
+     * برای تاریخ ذخیره‌شده، از dateGregorian
+     * استفاده می‌کنیم.
+     */
+
+    return flights.filter(
+      flight =>
+        flight.dateGregorian &&
+        flight.dateGregorian.startsWith(filter)
+    );
+
+  }
+
+
+  /*
+   * ==========================================
+   * TOTAL
+   * ==========================================
+   */
+
+  function calculateTotal(list) {
+
+    return list.reduce(
+      (sum, flight) =>
+        sum + Number(flight.minutes || 0),
+      0
+    );
+
+  }
+
+
+  /*
+   * ==========================================
+   * RENDER DASHBOARD
+   * ==========================================
+   */
+
+  function renderDashboard() {
+
+    const total =
+      calculateTotal(flights);
+
+
+    const currentYear =
+      getCurrentPersianYear();
+
+
+    const yearFlights =
+      flights.filter(
+        flight =>
+          flight.datePersian &&
+          flight.datePersian.startsWith(
+            currentYear + "/"
+          )
+      );
+
+
+    const yearTotal =
+      calculateTotal(yearFlights);
+
+
+    document
+      .getElementById("totalFlights")
+      .textContent =
+      toPersianDigits(
+        flights.length
+      );
+
+
+    document
+      .getElementById("totalFlightTime")
+      .textContent =
+      formatDurationPersian(total);
+
+
+    document
+      .getElementById("yearFlights")
+      .textContent =
+      toPersianDigits(
+        yearFlights.length
+      );
+
+
+    document
+      .getElementById("yearFlightTime")
+      .textContent =
+      formatDurationPersian(yearTotal);
+
+  }
+
+
+  /*
+   * ==========================================
+   * RENDER HISTORY
+   * ==========================================
+   */
+
+  function renderHistory() {
+
+    const list =
+      getFilteredFlights();
+
+
+    const container =
+      document
+        .getElementById("historyList");
+
+
+    container.innerHTML = "";
+
+
+    const total =
+      calculateTotal(list);
+
+
+    document
+      .getElementById("filteredTotal")
+      .textContent =
+      formatDurationPersian(total);
+
+
+    if (list.length === 0) {
+
+      container.innerHTML = `
+        <div class="empty">
+          ✈️ هنوز پروازی ثبت نشده است.
+        </div>
+      `;
+
+      return;
+
+    }
+
+
+    list.forEach(flight => {
+
+      const record =
+        document.createElement("div");
+
+
+      record.className =
+        "flight-record";
+
+
+      record.innerHTML = `
+
+        <div class="record-top">
+
+          <div class="record-date">
+
+            📅
+            ${toPersianDigits(
+              flight.datePersian || "بدون تاریخ"
+            )}
+
+          </div>
+
+          <div class="record-duration">
+
+            ${formatDurationPersian(
+              flight.minutes
+            )}
+
+          </div>
+
+        </div>
+
+
+        <div class="record-route">
+
+          ${escapeHTML(flight.origin)}
+          →
+          ${escapeHTML(flight.destination)}
+
+        </div>
+
+
+        <div class="record-gregorian">
+
+          ${flight.dateGregorian || ""}
+
+        </div>
+
+
+        <div class="record-actions">
+
+          <button
+            class="btn btn-secondary btn-small"
+            onclick="editFlight('${flight.id}')">
+
+            ✏️ ویرایش
+
+          </button>
+
+
+          <button
+            class="btn btn-danger btn-small"
+            onclick="deleteFlight('${flight.id}')">
+
+            🗑 حذف
+
+          </button>
+
+        </div>
+
+      `;
+
+
+      container.appendChild(record);
+
+    });
+
+  }
+
+
+  /*
+   * ==========================================
+   * EDIT
+   * ==========================================
+   */
+
+  window.editFlight =
+    function(id) {
+
+      const flight =
+        flights.find(
+          f => f.id === id
+        );
+
+
+      if (!flight) return;
+
+
+      document
+        .getElementById("editId")
+        .value = flight.id;
+
+
+      document
+        .getElementById("editDate")
+        .value =
+        flight.datePersian;
+
+
+      document
+        .getElementById("editOrigin")
+        .value =
+        flight.origin;
+
+
+      document
+        .getElementById("editDestination")
+        .value =
+        flight.destination;
+
+
+      document
+        .getElementById("editDuration")
+        .value =
+        formatDuration(
+          flight.minutes
+        );
+
+
+      document
+        .getElementById("editModal")
+        .style.display = "flex";
+
+    };
+
+
+  /*
+   * ==========================================
+   * UPDATE
+   * ==========================================
+   */
+
+  function updateFlight() {
+
+    const id =
+      document
+        .getElementById("editId")
+        .value;
+
+
+    const flight =
+      flights.find(
+        f => f.id === id
+      );
+
+
+    if (!flight) return;
+
+
+    const date =
+      normalizePersianDate(
+        document
+          .getElementById("editDate")
+          .value
+      );
+
+
+    const origin =
+      document
+        .getElementById("editOrigin")
+        .value
+        .trim()
+        .toUpperCase();
+
+
+    const destination =
+      document
+        .getElementById("editDestination")
+        .value
+        .trim()
+        .toUpperCase();
+
+
+    const minutes =
+      parseDuration(
+        document
+          .getElementById("editDuration")
+          .value
+      );
+
+
+    if (!date ||
+        !origin ||
+        !destination ||
+        minutes <= 0) {
+
+      alert(
+        "اطلاعات واردشده معتبر نیست."
+      );
+
+      return;
+
+    }
+
+
+    flight.datePersian =
+      date;
+
+    flight.origin =
+      origin;
+
+    flight.destination =
+      destination;
+
+    flight.minutes =
+      minutes;
+
+
+    saveFlights();
+
+    closeEditModal();
+
+    renderAll();
+
+  }
+
+
+  /*
+   * ==========================================
+   * DELETE
+   * ==========================================
+   */
+
+  window.deleteFlight =
+    function(id) {
+
+      const flight =
+        flights.find(
+          f => f.id === id
+        );
+
+
+      if (!flight) return;
+
+
+      const confirmed =
+        confirm(
+          `پرواز ${flight.origin} → ${flight.destination} حذف شود؟`
+        );
+
+
+      if (!confirmed) return;
+
+
+      flights =
+        flights.filter(
+          f => f.id !== id
+        );
+
+
+      saveFlights();
+
+      renderAll();
+
+    };
+
+
+  /*
+   * ==========================================
+   * MODAL
+   * ==========================================
+   */
+
+  function closeEditModal() {
+
+    document
+      .getElementById("editModal")
+      .style.display = "none";
+
+  }
+
+
+  /*
+   * ==========================================
+   * ESCAPE HTML
+   * ==========================================
+   */
+
+  function escapeHTML(value) {
+
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+
+  }
+
+
+  /*
+   * ==========================================
+   * RENDER ALL
+   * ==========================================
+   */
+
+  function renderAll() {
+
+    renderDashboard();
+
+    renderHistory();
+
+  }
+
+
+  /*
+   * ==========================================
+   * INIT
+   * ==========================================
+   */
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+
+      loadFlights();
+
+
+      /*
+       * تاریخ امروز
+       */
+
+      document
+        .getElementById("flightDate")
+        .value =
+        getTodayPersian();
+
+
+      /*
+       * ذخیره پرواز
+       */
+
+      document
+        .getElementById("btnSaveFlight")
+        .addEventListener(
+          "click",
+          saveNewFlight
+        );
+
+
+      /*
+       * Preview
+       */
+
+      [
+        "origin",
+        "destination",
+        "duration"
+      ].forEach(id => {
+
+        document
+          .getElementById(id)
+          .addEventListener(
+            "input",
+            updatePreview
+          );
+
+      });
+
+
+      /*
+       * فیلتر
+       */
+
+      document
+        .getElementById("filterMonth")
+        .addEventListener(
+          "change",
+          renderHistory
+        );
+
+
+      /*
+       * پاک کردن فیلتر
+       */
+
+      document
+        .getElementById("btnClearFilter")
+        .addEventListener(
+          "click",
+          () => {
+
+            document
+              .getElementById("filterMonth")
+              .value = "";
+
+            renderHistory();
+
+          }
+        );
+
+
+      /*
+       * Update
+       */
+
+      document
+        .getElementById("btnUpdateFlight")
+        .addEventListener(
+          "click",
+          updateFlight
+        );
+
+
+      /*
+       * Cancel
+       */
+
+      document
+        .getElementById("btnCancelEdit")
+        .addEventListener(
+          "click",
+          closeEditModal
+        );
+
+
+      /*
+       * کلیک بیرون مودال
+       */
+
+      document
+        .getElementById("editModal")
+        .addEventListener(
+          "click",
+          event => {
+
+            if (
+              event.target.id ===
+              "editModal"
+            ) {
+
+              closeEditModal();
+
+            }
+
+          }
+        );
+
+
+      renderAll();
+
+    }
+  );
+
+</script>
 
 </body>
 </html>
