@@ -19,15 +19,18 @@ jobs:
         distribution: 'temurin'
         java-version: '17'
 
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
 
-    - name: Install Dependencies
+    - name: Install Python Dependencies
       run: pip install Pillow
 
-    - name: Build Project Structure
+    - name: Generate Assets & Android Project
       run: |
         mkdir -p app/src/main/assets
         mkdir -p app/src/main/res/mipmap-hdpi
@@ -35,13 +38,13 @@ jobs:
         mkdir -p app/src/main/res/mipmap-xxhdpi
         mkdir -p app/src/main/res/mipmap-xxxhdpi
         mkdir -p app/src/main/java/com/avafix/logbook
-        mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/values
 
-        # Generate Python Icon Script
+        # 1. Generate App Icons via Python
         cat << 'EOF' > make_icon.py
         import math
         from PIL import Image, ImageDraw
+
         def generate_ava_icon(size):
             img = Image.new("RGBA", (size, size), (9, 11, 16, 255))
             draw = ImageDraw.Draw(img)
@@ -61,66 +64,177 @@ jobs:
                 rad = (size * 0.012) + (math.sin(t*3) * (size * 0.005))
                 draw.ellipse([px - rad, py - rad, px + rad, py + rad], fill=(255, 255, 255, 245))
             return img
-        sizes = {"app/src/main/res/mipmap-hdpi/ic_launcher.png": 72, "app/src/main/res/mipmap-xhdpi/ic_launcher.png": 96, "app/src/main/res/mipmap-xxhdpi/ic_launcher.png": 144, "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": 192}
+
+        sizes = {
+            "app/src/main/res/mipmap-hdpi/ic_launcher.png": 72,
+            "app/src/main/res/mipmap-xhdpi/ic_launcher.png": 96,
+            "app/src/main/res/mipmap-xxhdpi/ic_launcher.png": 144,
+            "app/src/main/res/mipmap-xxxhdpi/ic_launcher.png": 192
+        }
         for path, s in sizes.items():
             icon = generate_ava_icon(s)
             icon.save(path, "PNG")
         EOF
         python make_icon.py
 
-        # Create Config Files
+        # 2. Settings Gradle (with Repositories)
         cat << 'EOF' > settings.gradle
+        pluginManagement {
+            repositories {
+                google()
+                mavenCentral()
+                gradlePluginPortal()
+            }
+        }
+        dependencyResolutionManagement {
+            repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
         rootProject.name = "AvaFix"
         include ':app'
         EOF
 
+        # 3. App build.gradle
         cat << 'EOF' > app/build.gradle
-        plugins { id 'com.android.application' }
+        plugins {
+            id 'com.android.application' version '8.2.2' apply false
+        }
+        EOF
+
+        cat << 'EOF' > build.gradle
+        plugins {
+            id 'com.android.application' version '8.2.2' apply false
+        }
+        EOF
+
+        cat << 'EOF' > app/build.gradle
+        plugins {
+            id 'com.android.application'
+        }
+
         android {
             namespace 'com.avafix.logbook'
             compileSdk 34
-            defaultConfig { applicationId "com.avafix.logbook"; minSdk 24; targetSdk 34; versionCode 11; versionName "2.7" }
+
+            defaultConfig {
+                applicationId "com.avafix.logbook"
+                minSdk 24
+                targetSdk 34
+                versionCode 11
+                versionName "2.7"
+            }
+
+            buildTypes {
+                release {
+                    minifyEnabled false
+                }
+            }
         }
+        EOF
+
+        # 4. Strings & Manifest
+        cat << 'EOF' > app/src/main/res/values/strings.xml
+        <resources>
+            <string name="app_name">AvaFix</string>
+        </resources>
         EOF
 
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <uses-permission android:name="android.permission.INTERNET" />
-            <application android:label="AvaFix" android:icon="@mipmap/ic_launcher" android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
-                <activity android:name=".MainActivity" android:exported="true">
-                    <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+            <application
+                android:label="@string/app_name"
+                android:icon="@mipmap/ic_launcher"
+                android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+                <activity
+                    android:name=".MainActivity"
+                    android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
                 </activity>
             </application>
         </manifest>
         EOF
 
+        # 5. Java Activity
         cat << 'EOF' > app/src/main/java/com/avafix/logbook/MainActivity.java
         package com.avafix.logbook;
+
         import android.app.Activity;
         import android.os.Bundle;
         import android.webkit.WebView;
+        import android.webkit.WebSettings;
+
         public class MainActivity extends Activity {
             @Override
-            protected void onCreate(Bundle b) {
-                super.onCreate(b);
-                WebView wv = new WebView(this);
-                wv.getSettings().setJavaScriptEnabled(true);
-                wv.getSettings().setDomStorageEnabled(true);
-                wv.loadUrl("file:///android_asset/index.html");
-                setContentView(wv);
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                WebView webView = new WebView(this);
+                WebSettings settings = webView.getSettings();
+                settings.setJavaScriptEnabled(true);
+                settings.setDomStorageEnabled(true);
+                webView.loadUrl("file:///android_asset/index.html");
+                setContentView(webView);
             }
         }
         EOF
 
-        # Note: HTML content is large, keep it in index.html block
+        # 6. HTML Asset
         cat << 'EOF' > app/src/main/assets/index.html
-        <!DOCTYPE html><html dir="rtl"><head><meta charset="utf-8"><style>body{background:#090B10; color:#fff; font-family:sans-serif; padding:20px;}</style></head>
-        <body><h1>AvaFix v2.7 Ready</h1></body></html>
+        <!DOCTYPE html>
+        <html lang="fa" dir="rtl">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>AvaFix v2.7</title>
+            <style>
+                body {
+                    margin: 0;
+                    padding: 24px;
+                    background: #090B10;
+                    color: #FFFFFF;
+                    font-family: system-ui, -apple-system, sans-serif;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    min-height: 80vh;
+                    text-align: center;
+                }
+                .badge {
+                    background: #D31A2B;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-size: 14px;
+                    font-weight: bold;
+                    margin-bottom: 16px;
+                }
+                h1 { margin: 0 0 10px 0; font-size: 24px; }
+                p { color: #A0AEC0; font-size: 14px; }
+            </style>
+        </head>
+        <body>
+            <div class="badge">AvaFix v2.7</div>
+            <h1>هواپیمایی آوا</h1>
+            <p>سیستم محاسبه و بایگانی لاگ‌بوک خدمه پرواز</p>
+        </body>
+        </html>
         EOF
 
-    - name: Build
+    - name: Build with Gradle Wrapper
       run: |
         gradle wrapper --gradle-version 8.5
-        chmod +x ./gradlew
+        chmod +x gradlew
         ./gradlew assembleRelease --no-daemon
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: AvaFix-v2.7-Release
+        path: app/build/outputs/apk/release/app-release-unsigned.apk
