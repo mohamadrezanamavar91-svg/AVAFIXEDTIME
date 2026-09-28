@@ -1,43 +1,106 @@
 name: Build AvaFix APK
 
 on:
+  push:
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-
-    - name: Set up Java 17
+    - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: '17'
 
-    - name: Generate Android Project and Build APK
+    - name: Setup Android Project & UI
       run: |
-        # ساختار پوشه‌ها
-        mkdir -p app/src/main/java/com/avacrew/avafix
+        mkdir -p app/src/main/java/com/avafix/logbook
+        mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/values
+        mkdir -p app/src/main/res/drawable
+        mkdir -p app/src/main/res/mipmap-anydpi-v26
+        mkdir -p app/src/main/res/mipmap-xxxhdpi
 
-        # مقادیر متن
-        cat << 'EOF' > app/src/main/res/values/strings.xml
+        # Settings Gradle
+        cat << 'EOF' > settings.gradle
+        rootProject.name = "AvaFix"
+        include ':app'
+        EOF
+
+        # Root build.gradle
+        cat << 'EOF' > build.gradle
+        buildscript {
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.2.2'
+            }
+        }
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        EOF
+
+        # App build.gradle
+        cat << 'EOF' > app/build.gradle
+        plugins {
+            id 'com.android.application'
+        }
+        android {
+            namespace 'com.avafix.logbook'
+            compileSdk 34
+            defaultConfig {
+                applicationId "com.avafix.logbook"
+                minSdk 24
+                targetSdk 34
+                versionCode 2
+                versionName "2.0"
+            }
+            buildTypes {
+                release {
+                    minifyEnabled false
+                }
+            }
+        }
+        EOF
+
+        # Strings & Colors
+        cat << 'EOF' > app/src/main/res/values/colors.xml
+        <?xml version="1.0" encoding="utf-8"?>
         <resources>
-            <string name="app_name">AvaFix</string>
+            <color name="ava_red">#D31A2B</color>
+            <color name="ava_dark">#121417</color>
         </resources>
         EOF
 
-        # مانیفست اندروید
+        cat << 'EOF' > app/src/main/res/values/styles.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <resources>
+            <style name="Theme.AvaFix" parent="android:Theme.Material.NoActionBar">
+                <item name="android:statusBarColor">#121417</item>
+            </style>
+        </resources>
+        EOF
+
+        # Android Manifest with Brand Icon
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-            package="com.avacrew.avafix">
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
             <application
-                android:label="@string/app_name"
-                android:supportsRtl="true">
+                android:allowBackup="true"
+                android:icon="@drawable/ava_icon"
+                android:label="AvaFix"
+                android:roundIcon="@drawable/ava_icon"
+                android:theme="@style/Theme.AvaFix">
                 <activity
                     android:name=".MainActivity"
                     android:exported="true">
@@ -50,104 +113,119 @@ jobs:
         </manifest>
         EOF
 
-        # کد اصلی اپلیکیشن
-        cat << 'EOF' > app/src/main/java/com/avacrew/avafix/MainActivity.java
-        package com.avacrew.avafix;
+        # Vector Icon for Ava Airlines
+        cat << 'EOF' > app/src/main/res/drawable/ava_icon.xml
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="108dp"
+            android:height="108dp"
+            android:viewportWidth="108"
+            android:viewportHeight="108">
+            <path
+                android:fillColor="#D31A2B"
+                android:pathData="M0,0h108v108h-108z"/>
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M54,78 C54,78 28,60 28,42 C28,33 34,26 43,26 C48.5,26 52.5,29.5 54,32 C55.5,29.5 59.5,26 65,26 C74,26 80,33 80,42 C80,60 54,78 54,78 Z"/>
+            <path
+                android:fillColor="#D31A2B"
+                android:pathData="M54,68 C54,68 36,54 36,42 C36,37 39.5,33 44.5,33 C48.5,33 52,36 54,38 C56,36 59.5,33 63.5,33 C68.5,33 72,37 72,42 C72,54 54,68 54,68 Z"/>
+        </vector>
+        EOF
+
+        # Layout
+        cat << 'EOF' > app/src/main/res/layout/activity_main.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <android.webkit.WebView xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/webview"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+        EOF
+
+        # MainActivity with Minimalist Aviation UI
+        cat << 'EOF' > app/src/main/java/com/avafix/logbook/MainActivity.java
+        package com.avafix.logbook;
 
         import android.app.Activity;
         import android.os.Bundle;
-        import android.widget.LinearLayout;
-        import android.widget.TextView;
+        import android.webkit.WebSettings;
+        import android.webkit.WebView;
 
         public class MainActivity extends Activity {
             @Override
             protected void onCreate(Bundle savedInstanceState) {
                 super.onCreate(savedInstanceState);
-                LinearLayout layout = new LinearLayout(this);
-                layout.setOrientation(LinearLayout.VERTICAL);
-                layout.setPadding(60, 100, 60, 60);
+                setContentView(R.layout.activity_main);
 
-                TextView title = new TextView(this);
-                title.setText("✈️ AvaFix - Crew Logbook");
-                title.setTextSize(22);
-                layout.addView(title);
+                WebView webView = findViewById(R.id.webview);
+                WebSettings settings = webView.getSettings();
+                settings.setJavaScriptEnabled(true);
+                settings.setDomStorageEnabled(true);
 
-                TextView info = new TextView(this);
-                info.setText("\nFixed Times:\n• MHD-RAS-MHD: 250 mins\n• MHD-BGW-MHD: 375 mins\n\nStatus: Ready to Fly");
-                info.setTextSize(16);
-                layout.addView(info);
+                String html = "<!DOCTYPE html><html lang='fa' dir='rtl'><head><meta charset='utf-8'>" +
+                    "<meta name='viewport' content='width=device-width, initial-scale=1.0, user-scalable=no'>" +
+                    "<style>" +
+                    "  :root { --ava-red: #D31A2B; --bg: #0F1115; --card: #181B22; --border: #262B35; --text: #FFFFFF; --sub: #8E95A5; }" +
+                    "  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }" +
+                    "  body { background: var(--bg); color: var(--text); padding: 24px 16px; min-height: 100vh; }" +
+                    "  .header { text-align: center; margin-bottom: 28px; }" +
+                    "  .brand-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(211,26,43,0.12); border: 1px solid rgba(211,26,43,0.3); padding: 6px 16px; border-radius: 99px; color: var(--ava-red); font-size: 13px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 12px; }" +
+                    "  .title { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }" +
+                    "  .subtitle { font-size: 13px; color: var(--sub); margin-top: 4px; }" +
+                    "  .card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; padding: 20px; margin-bottom: 16px; position: relative; overflow: hidden; }" +
+                    "  .card::before { content: ''; position: absolute; top: 0; right: 0; width: 4px; height: 100%; background: var(--ava-red); }" +
+                    "  .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }" +
+                    "  .route { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }" +
+                    "  .tag { background: rgba(255,255,255,0.06); padding: 4px 10px; border-radius: 8px; font-size: 12px; color: var(--sub); }" +
+                    "  .time-box { display: flex; align-items: baseline; gap: 8px; }" +
+                    "  .time-val { font-size: 32px; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }" +
+                    "  .time-unit { font-size: 14px; color: var(--ava-red); font-weight: 600; }" +
+                    "  .detail { margin-top: 10px; font-size: 13px; color: var(--sub); display: flex; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; }" +
+                    "  .status-bar { text-align: center; margin-top: 24px; padding: 12px; font-size: 12px; color: #4E5565; }" +
+                    "</style></head><body>" +
+                    "  <div class='header'>" +
+                    "    <div class='brand-badge'>✈ AVA AIRLINES</div>" +
+                    "    <h1 class='title'>AvaFix Logbook</h1>" +
+                    "    <p class='subtitle'>سیستم محاسبه ساعات پروازی کابین</p>" +
+                    "  </div>" +
+                    "  <div class='card'>" +
+                    "    <div class='card-top'>" +
+                    "      <div class='route'>MHD ⇄ RAS</div>" +
+                    "      <div class='tag'>مشهد - رامسر</div>" +
+                    "    </div>" +
+                    "    <div class='time-box'>" +
+                    "      <span class='time-val'>250</span>" +
+                    "      <span class='time-unit'>دقیقه (۴ ساعت و ۱۰ دقیقه)</span>" +
+                    "    </div>" +
+                    "    <div class='detail'><span>وضعیت روت:</span><span style='color:#34D399'>فیکس مصوب</span></div>" +
+                    "  </div>" +
+                    "  <div class='card'>" +
+                    "    <div class='card-top'>" +
+                    "      <div class='route'>MHD ⇄ BGW</div>" +
+                    "      <div class='tag'>مشهد - بغداد</div>" +
+                    "    </div>" +
+                    "    <div class='time-box'>" +
+                    "      <span class='time-val'>375</span>" +
+                    "      <span class='time-unit'>دقیقه (۶ ساعت و ۱۵ دقیقه)</span>" +
+                    "    </div>" +
+                    "    <div class='detail'><span>وضعیت روت:</span><span style='color:#34D399'>فیکس بین‌المللی</span></div>" +
+                    "  </div>" +
+                    "  <div class='status-bar'>EP-RBD Cabin Edition • Ready for Duty</div>" +
+                    "</body></html>";
 
-                setContentView(layout);
+                webView.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null);
             }
         }
         EOF
 
-        # تنظیمات پروژه
-        cat << 'EOF' > settings.gradle
-        rootProject.name = "AvaFix"
-        include ':app'
-        EOF
-
-        # build.gradle ریشه
-        cat << 'EOF' > build.gradle
-        buildscript {
-            repositories {
-                google()
-                mavenCentral()
-            }
-            dependencies {
-                classpath 'com.android.tools.build:gradle:8.1.4'
-            }
-        }
-        allprojects {
-            repositories {
-                google()
-                mavenCentral()
-            }
-        }
-        EOF
-
-        # build.gradle اپلیکیشن
-        cat << 'EOF' > app/build.gradle
-        apply plugin: 'com.android.application'
-
-        android {
-            namespace 'com.avacrew.avafix'
-            compileSdk 34
-
-            defaultConfig {
-                applicationId "com.avacrew.avafix"
-                minSdk 26
-                targetSdk 34
-                versionCode 1
-                versionName "1.0"
-            }
-
-            compileOptions {
-                sourceCompatibility JavaVersion.VERSION_17
-                targetCompatibility JavaVersion.VERSION_17
-            }
-
-            buildTypes {
-                release {
-                    minifyEnabled false
-                }
-            }
-        }
-        EOF
-
-        # دانلود و آماده‌سازی Gradle بدون خطا
-        curl -s -L -o gradle.zip https://services.gradle.org/distributions/gradle-8.4-bin.zip
+    - name: Download Gradle & Build APK
+      run: |
+        curl -L -o gradle.zip https://services.gradle.org/distributions/gradle-8.4-bin.zip
         unzip -q gradle.zip
-        ./gradle-8.4/bin/gradle wrapper
-        chmod +x gradlew
+        ./gradle-8.4/bin/gradle assembleDebug --no-daemon
 
-        # ساخت فایل نصبی APK
-        ./gradlew assembleDebug --no-daemon
-
-    - name: Upload Debug APK
+    - name: Upload AvaFix Clean APK
       uses: actions/upload-artifact@v4
       with:
-        name: AvaFix-APK
+        name: AvaFix-Aviation-Edition
         path: app/build/outputs/apk/debug/app-debug.apk
-        if-no-files-found: error
+        retention-days: 7
